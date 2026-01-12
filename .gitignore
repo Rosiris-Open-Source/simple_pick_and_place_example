@@ -1,0 +1,19 @@
+#ignore build generated files
+build/
+install/
+log/
+
+# exclude the repositories
+src/Universal_Robots_ROS2_Description
+src/Universal_Robots_ROS2_Driver
+src/gz_ros2_control
+src/moveit2
+src/moveit_msgs
+src/ros2_control
+src/ros2_controllers
+src/srdfdom
+src/ur_simulation_gz
+
+# Trashed files
+.Trash-*/ 
+.nfs* 

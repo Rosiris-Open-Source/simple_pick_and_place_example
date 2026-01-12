@@ -1,0 +1,144 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "colcon build (symlink-install)",
+      "type": "shell",
+      "command": "colcon",
+      "args": [
+        "build",
+        "--symlink-install",
+        "--cmake-args",
+        "-DCMAKE_BUILD_TYPE=${input:release_type}",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "${input:additional_flags}",
+        "--packages-up-to",
+        "${input:package}"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "colcon build package select (symlink-install)",
+      "type": "shell",
+      "command": "colcon",
+      "args": [
+        "build",
+        "--symlink-install",
+        "--cmake-args",
+        "-DCMAKE_BUILD_TYPE=${input:release_type}",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "${input:additional_flags}",
+        "--packages-select",
+        "${input:package}"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "colcon clean",
+      "type": "shell",
+      "command": "colcon",
+      "args": [
+        "clean",
+        "workspace",
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "colcon clean match",
+      "type": "shell",
+      "command": "colcon",
+      "args": [
+        "clean",
+        "workspace",
+        "--clean-match",
+        "${input:clean_pattern}"
+      ],
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "rosdep install",
+      "type": "shell",
+      "group": "build",
+      "command": "rosdep install --from-paths src --ignore-src -r -y",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "vcs import",
+      "type": "shell",
+      "group": "build",
+      "command": "vcs import --input .repos/${input:vcs_pull_type}.repos --workers 1 ${input:additional_flags}",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+  ],
+  "inputs": [
+    {
+      "id": "package",
+      "type": "promptString",
+      "description": "Packages to build (emtpy for all).",
+      "default": ""
+    },
+    {
+      "id": "vcs_pull_type",
+      "type": "pickString",
+      "description": "If repose should be clone using ssh or html.",
+      "options": [
+        "ssh",
+        "html",
+      ],
+      "default": "ssh"
+    },
+    {
+      "id": "additional_flags",
+      "type": "promptString",
+      "description": "Pass additional flags to commands.",
+      "default": ""
+    },
+    {
+      "id": "clean_pattern",
+      "type": "promptString",
+      "description": "Pattern which packages to clean.",
+      "default": ""
+    },
+    {
+      "id": "release_type",
+      "type": "pickString",
+      "description": "Select the release to with which to build",
+      "options": [
+        "Release",
+        "RelWithDebInfo",
+        "Debug"
+      ],
+      "default": "RelWithDebInfo"
+    },
+  ]
+}
