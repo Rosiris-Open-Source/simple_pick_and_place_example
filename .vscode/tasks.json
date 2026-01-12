@@ -112,8 +112,8 @@
       "type": "pickString",
       "description": "If repose should be clone using ssh or html.",
       "options": [
-        "ssh",
         "html",
+        "html-exact",
       ],
       "default": "ssh"
     },
