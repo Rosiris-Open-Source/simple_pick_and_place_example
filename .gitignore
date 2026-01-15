@@ -4,14 +4,17 @@ install/
 log/
 
 # exclude the repositories
-src/Universal_Robots_ROS2_Description
-src/Universal_Robots_ROS2_Driver
 src/gz_ros2_control
-src/moveit2
 src/moveit_msgs
+src/moveit2
 src/ros2_control
 src/ros2_controllers
+src/ros2_kortex
+src/ros2_robotiq_gripper
+src/serial
 src/srdfdom
+src/Universal_Robots_ROS2_Description
+src/Universal_Robots_ROS2_Driver
 src/ur_simulation_gz
 
 # Trashed files

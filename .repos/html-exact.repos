@@ -1,37 +1,37 @@
 repositories:
-  Universal_Robots_ROS2_Description:
-    type: git
-    url: https://github.com/UniversalRobots/Universal_Robots_ROS2_Description.git
-    version: f6fd0e444f8bd847b83d9af8f2d35573628e4121
-  Universal_Robots_ROS2_Driver:
-    type: git
-    url: https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver.git
-    version: c1d3656bcaeb998636dad0b5577c2ea563499290
-  gz_ros2_control:
+  src/gz_ros2_control:
     type: git
     url: https://github.com/ros-controls/gz_ros2_control.git
     version: b21237d8e93e87c83d04e931b4477230609e6663
-  moveit2:
+  src/moveit2:
     type: git
     url: https://github.com/ros-planning/moveit2.git
     version: 5a8ef4df4ba9bcedd1e65f9042e6fa718e215bf0
-  moveit_msgs:
+  src/moveit_msgs:
     type: git
     url: https://github.com/ros-planning/moveit_msgs.git
     version: 8daca8c56914e9cb8bd31d3332e71dd93dde5cc6
-  ros2_control:
+  src/ros2_control:
     type: git
     url: https://github.com/ros-controls/ros2_control.git
     version: 68e142c7db8cf91c59bd223f30e0a34c959fb4e0
-  ros2_controllers:
+  src/ros2_controllers:
     type: git
     url: https://github.com/ros-controls/ros2_controllers.git
     version: 0ff49c3eedd5332952caa81d624237c94518f5f5
-  srdfdom:
+  src/ros2_kortex:
+    type: git
+    url: https://github.com/Kinovarobotics/ros2_kortex.git
+    version: 1371eccbe5740e964f3c72b9d109936c5230794b
+  src/ros2_robotiq_gripper:
+    type: git
+    url: https://github.com/PickNikRobotics/ros2_robotiq_gripper.git
+    version: 630ed383916e347701dad750f28e362ca7849228
+  src/serial:
+    type: git
+    url: https://github.com/tylerjw/serial.git
+    version: d8d160678aa0b31cdf467c052b954fa287cc6cdf
+  src/srdfdom:
     type: git
     url: https://github.com/moveit/srdfdom.git
     version: 222b47fa86e81ee3cdb23dc51f08cb152f2af4aa
-  ur_simulation_gz:
-    type: git
-    url: https://github.com/UniversalRobots/Universal_Robots_ROS2_GZ_Simulation.git
-    version: 3a98f72e15f41f3f1d800e7138ffe937c38b8c3b
