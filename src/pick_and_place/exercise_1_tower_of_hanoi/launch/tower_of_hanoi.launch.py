@@ -21,7 +21,7 @@ def generate_launch_description():
     # Load the robot configuration
     moveit_config = (
         MoveItConfigsBuilder(
-            "gen3", package_name="kinova_gen3_7dof_robotiq_2f_85_moveit_config"
+            "gen3", package_name="exercise_1_tower_of_hanoi"
         )
         .robot_description(mappings=launch_arguments)
         .trajectory_execution(file_path="config/moveit_controllers.yaml")
@@ -51,7 +51,7 @@ def generate_launch_description():
     )
     rviz_base = LaunchConfiguration("rviz_config")
     rviz_config = PathJoinSubstitution(
-        [FindPackageShare("pick_and_place"), "rviz", rviz_base]
+        [FindPackageShare("exercise_1_tower_of_hanoi"), "rviz", rviz_base]
     )
 
     # Launch RViz
@@ -89,7 +89,7 @@ def generate_launch_description():
 
     # ros2_control using mock hardware for trajectory execution
     ros2_controllers_path = os.path.join(
-        get_package_share_directory("kinova_gen3_7dof_robotiq_2f_85_moveit_config"),
+        get_package_share_directory("exercise_1_tower_of_hanoi"),
         "config",
         "ros2_controllers.yaml",
     )

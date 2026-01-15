@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>pick_and_place</name>
+  <name>exercise_1_tower_of_hanoi</name>
   <version>0.0.0</version>
   <description>Simple pick and place scenarios with industrial robots and gazebo. Aimed for beginners who want to learn basics of robotics with industrial robots.</description>
   <maintainer email="manuel.muth@rosiris.de">Manuel Muth</maintainer>

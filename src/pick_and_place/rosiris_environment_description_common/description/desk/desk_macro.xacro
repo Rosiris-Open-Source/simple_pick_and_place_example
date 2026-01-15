@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="desk" params="prefix parent *origin">
+        <link name="${prefix}desk_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://rosiris_environment_description_common/meshes/desk/desk_visual.obj"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://rosiris_environment_description_common/meshes/collision/rail.stl"/>
+                </geometry>
+            </collision>
+        </link>
+        <joint name="${parent}_to_desk_joint" type="fixed">
+            <parent link="${parent}"/>
+            <child link="${prefix}desk_link"/>
+            <xacro:insert_block name="origin" />
+        </joint>
+  </xacro:macro>
+</robot>
