@@ -1,24 +1,48 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="desk" params="prefix parent *origin">
-        <link name="${prefix}desk_link">
+  <xacro:macro name="desk" params="prefix parent number *origin
+    desk_height:=0.55
+    desk_base_width:=0.48
+    desk_base_length:=0.8">
+
+        <xacro:property name="desk_tabletop_width" value="${0.52 * desk_base_width / 0.48}"/>
+        <xacro:property name="desk_tabletop_length" value="${0.84 * desk_base_length / 0.8}"/>
+        <!-- make collision a bit bigger then the visual -->
+        <xacro:property name="collision_delta" value="0.005"/>
+        
+        <link name="${prefix}desk_${number}_link">
             <visual>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="${desk_base_width/2} ${desk_base_length/2} 0" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://rosiris_environment_description_common/meshes/desk/desk_visual.obj"/>
+                    <mesh filename="package://rosiris_environment_description_common/meshes/desk/desk_visual.stl"
+                    scale="${desk_base_width / 0.48} ${desk_base_length / 0.8} ${desk_height / 0.55}"/>
                 </geometry>
+                <material name="gray">
+                    <color rgba="0.6 0.6 0.6 1.0"/>
+                </material>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="${desk_base_width/2} ${desk_base_length/2} ${desk_height/2}" rpy="0 0 0" />
                 <geometry>
-                    <mesh filename="package://rosiris_environment_description_common/meshes/collision/rail.stl"/>
+                    <box size="${desk_tabletop_width+collision_delta} ${desk_tabletop_length+collision_delta} ${desk_height+collision_delta}"/>
                 </geometry>
+                <material name="gray">
+                    <color rgba="0.6 0.6 0.6 1.0"/>
+                </material>
             </collision>
         </link>
-        <joint name="${parent}_to_desk_joint" type="fixed">
+        <joint name="${parent}to_desk_${number}_joint" type="fixed">
             <parent link="${parent}"/>
-            <child link="${prefix}desk_link"/>
+            <child link="${prefix}desk_${number}_link"/>
             <xacro:insert_block name="origin" />
         </joint>
+
+        <link name="${prefix}desk_${number}_tabletop_link"/>
+        <joint name="desk_${number}_to_tabletop_joint" type="fixed">
+            <parent link="${prefix}desk_${number}_link"/>
+            <child link="${prefix}desk_${number}_tabletop_link"/>
+            <origin xyz="${(desk_base_width - desk_tabletop_width) / 2} ${(desk_base_length - desk_tabletop_length) / 2} ${desk_height}" rpy="0 0 0" />
+        </joint>
+
   </xacro:macro>
 </robot>

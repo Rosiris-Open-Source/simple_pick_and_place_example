@@ -21,7 +21,7 @@ def generate_launch_description():
     # Load the robot configuration
     moveit_config = (
         MoveItConfigsBuilder(
-            "gen3", package_name="exercise_1_tower_of_hanoi"
+            "tower_of_hanoi", package_name="exercise_1_tower_of_hanoi"
         )
         .robot_description(mappings=launch_arguments)
         .trajectory_execution(file_path="config/moveit_controllers.yaml")
