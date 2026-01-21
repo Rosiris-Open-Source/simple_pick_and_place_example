@@ -23,31 +23,39 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-add_library(planning_scene_service_component SHARED
-  src/planning_scene_service_node.cpp
+add_library(planning_scene_manager_component SHARED
+  src/planning_scene_manager.cpp
+)
+target_include_directories(planning_scene_manager_component PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/planning_scene_manager_component>
+)
+ament_target_dependencies(planning_scene_manager_component  ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+rclcpp_components_register_nodes(planning_scene_manager_component
+  PLUGIN "rosiris_manipulation_utils::PlanningSceneManager"
+  EXECUTABLE planning_scene_manager
 )
 
-ament_target_dependencies(planning_scene_service_component  ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-rclcpp_components_register_nodes(planning_scene_service_component
-  PLUGIN "planning_scene_service_node::PlanningSceneServiceNode"
-  EXECUTABLE planning_scene_service_node
-)
-
-install(TARGETS planning_scene_service_component
+install(TARGETS 
+  planning_scene_manager_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
-add_executable(planning_scene_node
-  src/planning_scene_service_node.cpp
+add_executable(planning_scene_manager_node
+  src/planning_scene_manager_node.cpp
 ) 
 
-ament_target_dependencies(planning_scene_node ${THIS_PACKAGE_INCLUDE_DEPENDS})
+target_link_libraries(planning_scene_manager_node
+  planning_scene_manager_component
+)
+
+ament_target_dependencies(planning_scene_manager_node ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 install(TARGETS
-  planning_scene_node
+  planning_scene_manager_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

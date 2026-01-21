@@ -20,12 +20,13 @@
   <depend>moveit_ros_planning_interface</depend>
   <depend>moveit_msgs</depend>
 
-  <!-- Messages -->
+  <!-- Messages, services and action interfaces -->
   <depend>geometry_msgs</depend>
   <depend>shape_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
   <depend>tf2_ros</depend>
+  <depend>rosiris_manipulation_interfaces</depend>
 
   <!-- Required by MoveIt -->
   <depend>urdf</depend>

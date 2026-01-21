@@ -12,8 +12,8 @@ def generate_launch_description():
             composable_node_descriptions=[
                 ComposableNode(
                     package="rosiris_manipulation_utils",
-                    plugin="planning_scene_service_node::PlanningSceneServiceNode",
-                    name="planning_scene_service_node"
+                    plugin="rosiris_manipulation_utils::PlanningSceneManager",
+                    name="planning_scene_manager"
                 )
             ],
             output="screen",
