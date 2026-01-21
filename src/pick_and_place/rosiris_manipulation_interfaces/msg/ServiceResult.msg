@@ -1,0 +1,2 @@
+string msg
+ServiceReturnState state

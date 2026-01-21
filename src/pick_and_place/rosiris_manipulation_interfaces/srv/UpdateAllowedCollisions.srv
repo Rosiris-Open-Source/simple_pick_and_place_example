@@ -1,0 +1,6 @@
+string[] object_ids
+CollisionEntry[] collisions
+---
+ServiceResult result
+string[] updated_object_ids
+string[] not_updated_object_ids

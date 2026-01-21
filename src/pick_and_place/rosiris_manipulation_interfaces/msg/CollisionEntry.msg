@@ -1,0 +1,2 @@
+string object_id
+bool collision_allowed

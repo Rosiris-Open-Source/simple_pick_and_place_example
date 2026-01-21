@@ -1,0 +1,5 @@
+string[] object_id
+---
+ServiceResult result
+string[] removed_object_ids
+string[] not_removed_object_ids

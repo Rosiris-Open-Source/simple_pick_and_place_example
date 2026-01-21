@@ -1,0 +1,5 @@
+string collision_object_id
+string attach_to_link
+CollisionEntry[] collisions
+---
+ServiceResult result

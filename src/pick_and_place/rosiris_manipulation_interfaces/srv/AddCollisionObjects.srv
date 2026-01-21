@@ -1,0 +1,5 @@
+CollisionObject[] collision_objects
+---
+ServiceResult result
+string[] added_object_ids
+string[] not_added_object_ids

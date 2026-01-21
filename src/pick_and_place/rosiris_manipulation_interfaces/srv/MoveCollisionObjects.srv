@@ -1,0 +1,6 @@
+string[] object_id
+geometry_msgs/PoseStamped[] pose
+---
+ServiceResult result
+string[] moved_object_ids
+string[] not_moved_object_ids
