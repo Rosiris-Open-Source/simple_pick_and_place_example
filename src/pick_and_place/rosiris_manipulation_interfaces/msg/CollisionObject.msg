@@ -1,2 +1,2 @@
 moveit_msgs/CollisionObject collision_object
-CollisionEntry[] collisions
+CollisionEntry[] collision_entries

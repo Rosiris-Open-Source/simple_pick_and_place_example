@@ -1,5 +1,5 @@
 string collision_object_id
 string detach_to_link
-CollisionEntry[] collisions
+CollisionEntry[] collision_entries
 ---
 ServiceResult result

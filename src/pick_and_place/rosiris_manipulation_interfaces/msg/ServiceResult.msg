@@ -1,2 +1,2 @@
 string msg
-ServiceReturnState state
+int8 state

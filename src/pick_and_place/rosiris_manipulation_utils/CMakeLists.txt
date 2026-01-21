@@ -8,12 +8,13 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 set(THIS_PACKAGE_INCLUDE_DEPENDS
+  geometry_msgs
+  moveit_core
+  moveit_msgs
+  moveit_ros_planning
   rclcpp
   rclcpp_components
-  moveit_core
-  moveit_ros_planning
-  moveit_msgs
-  geometry_msgs
+  rosiris_manipulation_interfaces
   shape_msgs
   std_srvs
   tf2_ros
