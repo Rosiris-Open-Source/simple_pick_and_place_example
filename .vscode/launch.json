@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Execute Planning Scene Service",
+            "type": "ros2",
+            "request": "launch",
+            "target": "${workspaceFolder}/src/pick_and_place/rosiris_manipulation_utils/launch/planning_scene_manager_node.launch.py",
+            "arguments": []
+        }
+    ]
+}
