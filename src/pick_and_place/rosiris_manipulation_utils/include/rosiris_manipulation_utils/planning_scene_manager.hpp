@@ -2,6 +2,10 @@
 #define CONTROLLER_MANAGER__CONTROLLER_MANAGER_HPP_
 
 #include <functional>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
@@ -46,7 +50,7 @@ private:
   /**
    * @brief Apply collision matrix updates to ACM
    */
-  std::vector<std::string> applyCollisionMatrixUpdates(
+  std::tuple<std::vector<std::string>, std::vector<std::string>> applyCollisionMatrixUpdates(
     const std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> & updates);
 
   /**

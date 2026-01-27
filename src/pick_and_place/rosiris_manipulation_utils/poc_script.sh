@@ -31,12 +31,62 @@ collision_matrix_update: []"
 
 sleep 2
 
+ros2 service call /planning_scene_manager/move_collision_objects \
+rosiris_manipulation_interfaces/srv/MoveCollisionObjects \
+"collision_object_pose_updates:
+- object_id: '${BOX_ID}'
+  pose:
+    header:
+      frame_id: '${FRAME}'
+    pose:
+      position:
+        x: 1.5
+        y: 1.5
+        z: 0.8
+      orientation:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 1.0
+  collision_matrix_update: {}"
+
+
+sleep 2
+
+ros2 service call \
+  /planning_scene_manager/add_collision_objects \
+  rosiris_manipulation_interfaces/srv/AddCollisionObjects \
+"collision_objects:
+- id: '${BOX_ID}_2'
+  header:
+    frame_id: '${FRAME}'
+  primitives:
+    - type: 1
+      dimensions: [0.2, 0.2, 0.2]
+  primitive_poses:
+    - position:
+        x: 0.5
+        y: 0.0
+        z: 0.1
+      orientation:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 1.0
+collision_matrix_update:
+- target_link: '${BOX_ID}_2'
+  mode: 1   # REMOVE
+  collision_entries:
+  - touch_link: desk_1_link
+    collision_allowed: true"
+
+
 echo "Moving box..."
 
 ros2 service call /planning_scene_manager/move_collision_objects \
 rosiris_manipulation_interfaces/srv/MoveCollisionObjects \
 "collision_object_pose_updates:
-- object_id: '${BOX_ID}'
+- object_id: '${BOX_ID}_2'
   pose:
     header:
       frame_id: '${FRAME}'
@@ -65,8 +115,7 @@ collision_matrix_updates:
   mode: 1   # MERGE
   collision_entries:
   - touch_link: desk_1_link
-    collision_allowed: true
-"
+    collision_allowed: true"
 
 sleep 2
 

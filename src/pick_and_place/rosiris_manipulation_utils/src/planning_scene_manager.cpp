@@ -100,27 +100,35 @@ bool PlanningSceneManager::initialize()
 /**
  * @brief Apply collision matrix updates to ACM
  */
-std::vector<std::string> PlanningSceneManager::applyCollisionMatrixUpdates(
+std::tuple<std::vector<std::string>, std::vector<std::string>>
+PlanningSceneManager::applyCollisionMatrixUpdates(
   const std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> & updates)
 {
   std::vector<std::string> updated_links;
-
-  if (updates.empty())
-  {
-    return updated_links;
-  }
+  std::vector<std::string> failed_links;
 
   planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
   if (!scene)
   {
     RCLCPP_ERROR(get_logger(), "Failed to lock planning scene");
-    return updated_links;
+    for (const auto & update : updates)
+    {
+      failed_links.push_back(update.target_link);
+    }
+    return std::make_tuple(updated_links, failed_links);
   }
 
   collision_detection::AllowedCollisionMatrix & acm = scene->getAllowedCollisionMatrixNonConst();
 
   for (const auto & update : updates)
   {
+    // Validate target_link exists in the scene
+    if (!scene->knowsFrameTransform(update.target_link))
+    {
+      RCLCPP_WARN(get_logger(), "Target link not found in scene: %s", update.target_link.c_str());
+      continue;
+    }
+
     if (applyCollisionMatrixUpdate(acm, update))
     {
       updated_links.push_back(update.target_link);
@@ -128,10 +136,11 @@ std::vector<std::string> PlanningSceneManager::applyCollisionMatrixUpdates(
     else
     {
       RCLCPP_WARN(get_logger(), "Failed to apply ACM update for: %s", update.target_link.c_str());
+      failed_links.push_back(update.target_link);
     }
   }
 
-  return updated_links;
+  return std::make_tuple(updated_links, failed_links);
 }
 
 /**
@@ -142,14 +151,6 @@ bool PlanningSceneManager::applyCollisionMatrixUpdate(
   const rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate & update)
 {
   using CollisionMatrixUpdate = rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate;
-
-  // Validate target_link exists in the scene
-  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
-  if (!scene || !scene->knowsFrameTransform(update.target_link))
-  {
-    RCLCPP_WARN(get_logger(), "Target link not found in scene: %s", update.target_link.c_str());
-    return false;
-  }
 
   switch (update.mode)
   {
@@ -339,8 +340,8 @@ void PlanningSceneManager::addCollisionObjects(
     {
       response->result.return_type = rosiris_srv_result::ERROR;
       response->result.error_code.error_code =
-        rosiris_srv_error_codes::ERROR_LOCKING_PLANNING_SCENE;
-      response->result.message = "Failed to lock planning scene";
+        rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      response->result.message = "Planning scene not available";
       return;
     }
 
@@ -360,37 +361,60 @@ void PlanningSceneManager::addCollisionObjects(
     }
   }
 
+  if (added_ids.empty())
+  {
+    response->result.return_type = rosiris_srv_result::ERROR;
+    response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_ADDING_COLLISION_OBJECT;
+    response->result.message = "No objects were added successfully";
+    return;
+  }
+
   // Initialize ACM entries for successfully added objects
   if (!added_ids.empty())
   {
     initializeObjectsInACM(added_ids, false);
   }
 
-  // Apply custom collision matrix updates if provided
-  if (!request->collision_matrix_update.empty())
+  // collect ACM updates that target the newly added objects
+  std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> added_obj_acm_updates;
+  added_obj_acm_updates.reserve(added_ids.size());
+  for (const auto & update : request->collision_matrix_update)
   {
-    auto updated_links = applyCollisionMatrixUpdates(request->collision_matrix_update);
-
-    if (updated_links.size() != request->collision_matrix_update.size())
+    if (std::find(added_ids.begin(), added_ids.end(), update.target_link) != added_ids.end())
     {
-      RCLCPP_WARN(get_logger(), "Some ACM updates failed");
+      added_obj_acm_updates.push_back(update);
     }
   }
 
-  // Trigger planning scene update
+  // For the added objects, apply any requested ACM updates
+  auto [acm_updated_links, acm_updated_failed_links] =
+    applyCollisionMatrixUpdates(added_obj_acm_updates);
+
   planning_scene_monitor_->triggerSceneUpdateEvent(
     planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
 
   response->added_object_ids = added_ids;
   response->not_added_object_ids = not_added_ids;
-  response->result.return_type =
-    not_added_ids.empty() ? rosiris_srv_result::SUCCESS : rosiris_srv_result::PARTIAL_SUCCESS;
-  response->result.error_code.error_code =
-    not_added_ids.empty() ? rosiris_srv_error_codes::NO_ERROR
-                          : rosiris_srv_error_codes::ERROR_ADDING_COLLISION_OBJECT;
-  response->result.message =
-    not_added_ids.empty() ? "All objects added successfully"
-                          : "Failed to add " + std::to_string(not_added_ids.size()) + " object(s)";
+  if (!not_added_ids.empty())
+  {
+    response->result.return_type = rosiris_srv_result::PARTIAL_SUCCESS;
+    response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_ADDING_COLLISION_OBJECT;
+    response->result.message =
+      "Failed to add " + std::to_string(not_added_ids.size()) + " object(s)";
+  }
+
+  if (!acm_updated_failed_links.empty())
+  {
+    response->result.return_type = rosiris_srv_result::PARTIAL_SUCCESS;
+    response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_UPDATING_ACM;
+    response->result.message = "Could not apply ACM updates for " +
+                               std::to_string(acm_updated_failed_links.size()) + " links";
+    return;
+  }
+
+  response->result.return_type = rosiris_srv_result::SUCCESS;
+  response->result.error_code.error_code = rosiris_srv_error_codes::NO_ERROR;
+  response->result.message = "All objects added successfully";
 }
 
 void PlanningSceneManager::removeCollisionObjects(
@@ -406,8 +430,8 @@ void PlanningSceneManager::removeCollisionObjects(
     {
       response->result.return_type = rosiris_srv_result::ERROR;
       response->result.error_code.error_code =
-        rosiris_srv_error_codes::ERROR_LOCKING_PLANNING_SCENE;
-      response->result.message = "Failed to lock planning scene";
+        rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      response->result.message = "Planning scene not available";
       return;
     }
 
@@ -465,8 +489,8 @@ void PlanningSceneManager::attachCollisionObject(
     {
       response->result.return_type = rosiris_srv_result::ERROR;
       response->result.error_code.error_code =
-        rosiris_srv_error_codes::ERROR_LOCKING_PLANNING_SCENE;
-      response->result.message = "Failed to lock planning scene";
+        rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      response->result.message = "Planning scene not available";
       return;
     }
 
@@ -528,8 +552,8 @@ void PlanningSceneManager::detachCollisionObject(
     {
       response->result.return_type = rosiris_srv_result::ERROR;
       response->result.error_code.error_code =
-        rosiris_srv_error_codes::ERROR_LOCKING_PLANNING_SCENE;
-      response->result.message = "Failed to lock planning scene";
+        rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      response->result.message = "Planning scene not available";
       return;
     }
 
@@ -564,44 +588,31 @@ void PlanningSceneManager::detachCollisionObject(
   }
 
   // Apply collision matrix update
-  if (!request->collision_matrix_update.collision_entries.empty())
-  {
-    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
-    if (scene)
-    {
-      collision_detection::AllowedCollisionMatrix & acm =
-        scene->getAllowedCollisionMatrixNonConst();
+  std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> updates = {
+    request->collision_matrix_update};
+  auto [acm_updated_links, acm_updated_failed_links] = applyCollisionMatrixUpdates(updates);
 
-      if (!applyCollisionMatrixUpdate(acm, request->collision_matrix_update))
-      {
-        RCLCPP_WARN(get_logger(), "ACM update failed during detachment");
-      }
-    }
-  }
-  else
-  {
-    // Default behavior: Disallow collision with all robot links after detachment
-    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
-    if (scene)
-    {
-      collision_detection::AllowedCollisionMatrix & acm =
-        scene->getAllowedCollisionMatrixNonConst();
-
-      const moveit::core::RobotModelConstPtr & robot_model = scene->getRobotModel();
-      const std::vector<std::string> & link_names = robot_model->getLinkModelNames();
-
-      for (const auto & link_name : link_names)
-      {
-        acm.setEntry(request->collision_object_id, link_name, false);
-      }
-
-      RCLCPP_DEBUG(get_logger(), "Default ACM: Disallowed collision with all robot links");
-    }
-  }
-
-  // Trigger planning scene update
   planning_scene_monitor_->triggerSceneUpdateEvent(
     planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+
+  if (!acm_updated_failed_links.empty())
+  {
+    response->result.return_type = rosiris_srv_result::PARTIAL_SUCCESS;
+    response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_UPDATING_ACM;
+    std::stringstream ss;
+    ss << "[";
+    for (size_t i = 0; i < acm_updated_failed_links.size(); ++i)
+    {
+      ss << acm_updated_failed_links[i];
+      if (i + 1 < acm_updated_failed_links.size())
+      {
+        ss << ", ";
+      }
+    }
+    ss << "]";
+    response->result.message = "Could not apply ACM updates for links: " + ss.str();
+    return;
+  }
 
   response->result.return_type = rosiris_srv_result::SUCCESS;
   response->result.error_code.error_code = rosiris_srv_error_codes::NO_ERROR;
@@ -618,8 +629,8 @@ void PlanningSceneManager::moveCollisionObjects(
     {
       response->result.return_type = rosiris_srv_result::ERROR;
       response->result.error_code.error_code =
-        rosiris_srv_error_codes::ERROR_LOCKING_PLANNING_SCENE;
-      response->result.message = "Failed to lock planning scene";
+        rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      response->result.message = "Planning scene not available";
       return;
     }
 
@@ -654,64 +665,78 @@ void PlanningSceneManager::moveCollisionObjects(
     }
   }
 
-  // Apply ACM updates if provided
-  for (const auto & update : request->collision_object_pose_updates)
+  if (response->moved_object_ids.empty())
   {
-    if (!update.collision_matrix_update.collision_entries.empty())
-    {
-      planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
-      if (scene)
-      {
-        collision_detection::AllowedCollisionMatrix & acm =
-          scene->getAllowedCollisionMatrixNonConst();
-
-        if (!applyCollisionMatrixUpdate(acm, update.collision_matrix_update))
-        {
-          RCLCPP_WARN(
-            get_logger(), "ACM update failed for moved object: %s", update.object_id.c_str());
-        }
-      }
-    }
+    response->result.return_type = rosiris_srv_result::ERROR;
+    response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_MOVING_COLLISION_OBJECT;
+    response->result.message = "No objects were moved successfully";
+    return;
   }
 
-  // Trigger planning scene update
+  // Apply ACM updates only for successfully moved objects if provided
+  std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> moved_obj_acm_updates;
+  moved_obj_acm_updates.reserve(response->moved_object_ids.size());
+  for (const auto & update : request->collision_object_pose_updates)
+  {
+    if (
+      std::find(
+        response->moved_object_ids.begin(), response->moved_object_ids.end(), update.object_id) !=
+      response->moved_object_ids.end())
+    {
+      moved_obj_acm_updates.push_back(update.collision_matrix_update);
+    }
+  }
+  auto [acm_updated_links, acm_update_failed_links] =
+    applyCollisionMatrixUpdates(moved_obj_acm_updates);
+
   planning_scene_monitor_->triggerSceneUpdateEvent(
     planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
 
-  response->result.return_type = response->not_moved_object_ids.empty()
-                                   ? rosiris_srv_result::SUCCESS
-                                   : rosiris_srv_result::PARTIAL_SUCCESS;
-  response->result.error_code.error_code =
-    response->not_moved_object_ids.empty() ? rosiris_srv_error_codes::NO_ERROR
-                                           : rosiris_srv_error_codes::ERROR_MOVING_COLLISION_OBJECT;
-  response->result.message =
-    response->not_moved_object_ids.empty()
-      ? "All objects moved successfully"
-      : "Failed to move " + std::to_string(response->not_moved_object_ids.size()) + " object(s)";
+  if (!response->not_moved_object_ids.empty())
+  {
+    response->result.return_type = rosiris_srv_result::PARTIAL_SUCCESS;
+    response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_MOVING_COLLISION_OBJECT;
+    response->result.message =
+      "Failed to move " + std::to_string(response->not_moved_object_ids.size()) + " object(s)";
+    return;
+  }
+
+  if (!acm_update_failed_links.empty())
+  {
+    response->result.return_type = rosiris_srv_result::PARTIAL_SUCCESS;
+    response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_UPDATING_ACM;
+    std::stringstream ss;
+    ss << "[";
+    for (size_t i = 0; i < acm_update_failed_links.size(); ++i)
+    {
+      ss << acm_update_failed_links[i];
+      if (i + 1 < acm_update_failed_links.size())
+      {
+        ss << ", ";
+      }
+    }
+    ss << "]";
+    response->result.message = "Could not apply ACM updates for links: " + ss.str();
+    return;
+  }
+  response->result.return_type = rosiris_srv_result::SUCCESS;
+  response->result.error_code.error_code = rosiris_srv_error_codes::NO_ERROR;
+  response->result.message = "All objects moved successfully";
 }
 
 void PlanningSceneManager::updateAllowedCollisions(
   const std::shared_ptr<rosiris_manip_srv::UpdateAllowedCollisions::Request> request,
   std::shared_ptr<rosiris_manip_srv::UpdateAllowedCollisions::Response> response)
 {
-  auto updated_links = applyCollisionMatrixUpdates(request->collision_matrix_updates);
+  auto [acm_updated_links, acm_update_failed_links] =
+    applyCollisionMatrixUpdates(request->collision_matrix_updates);
 
   // Trigger planning scene update
   planning_scene_monitor_->triggerSceneUpdateEvent(
     planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
 
-  response->updated_object_ids = updated_links;
-
-  // Determine which updates failed
-  for (const auto & update : request->collision_matrix_updates)
-  {
-    if (
-      std::find(updated_links.begin(), updated_links.end(), update.target_link) ==
-      updated_links.end())
-    {
-      response->not_updated_object_ids.push_back(update.target_link);
-    }
-  }
+  response->updated_object_ids = acm_updated_links;
+  response->not_updated_object_ids = acm_update_failed_links;
 
   response->result.return_type = response->not_updated_object_ids.empty()
                                    ? rosiris_srv_result::SUCCESS
