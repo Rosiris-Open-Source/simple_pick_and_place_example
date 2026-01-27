@@ -1,5 +1,4 @@
-string[] object_ids
-CollisionEntry[] collision_entries
+CollisionMatrixUpdate[] collision_matrix_updates
 ---
 ServiceResult result
 string[] updated_object_ids

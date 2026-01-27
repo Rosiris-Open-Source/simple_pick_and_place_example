@@ -1,2 +1,0 @@
-moveit_msgs/CollisionObject collision_object
-CollisionEntry[] collision_entries

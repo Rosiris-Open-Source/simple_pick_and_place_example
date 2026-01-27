@@ -19,9 +19,10 @@ endforeach()
 
 set(msg_files
   msg/CollisionEntry.msg
-  msg/CollisionObject.msg
+  msg/CollisionMatrixUpdate.msg
+  msg/CollisionObjectPoseUpdate.msg
+  msg/ServiceErrorCode.msg
   msg/ServiceResult.msg
-  msg/ServiceReturnState.msg
 )
 
 set(srv_files

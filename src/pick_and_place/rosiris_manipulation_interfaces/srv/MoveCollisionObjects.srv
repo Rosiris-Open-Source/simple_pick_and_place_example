@@ -1,5 +1,4 @@
-string[] object_ids
-geometry_msgs/PoseStamped[] poses
+CollisionObjectPoseUpdate[] collision_object_pose_updates
 ---
 ServiceResult result
 string[] moved_object_ids
