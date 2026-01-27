@@ -1,5 +1,5 @@
-string collision_object_id
-string detach_to_link
+string detach_from_link
+string collision_object_id 
 CollisionMatrixUpdate collision_matrix_update
 ---
 ServiceResult result

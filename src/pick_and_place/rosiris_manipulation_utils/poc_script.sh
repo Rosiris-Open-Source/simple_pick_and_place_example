@@ -77,7 +77,7 @@ ros2 service call \
   rosiris_manipulation_interfaces/srv/AttachCollisionObject \
 "collision_object_id: '${BOX_ID}'
 attach_to_link: '${EEF_LINK}'
-collision_matrix_update: {}"
+allowed_touch_links: []"
 
 sleep 2
 
@@ -86,8 +86,8 @@ echo "Detaching box from end effector..."
 ros2 service call \
   /planning_scene_manager/detach_collision_object \
   rosiris_manipulation_interfaces/srv/DetachCollisionObject \
-"collision_object_id: '${BOX_ID}'
-detach_to_link: 'world'
+"detach_from_link: '${EEF_LINK}'
+collision_object_id: '${BOX_ID}'
 collision_matrix_update: {}"
 
 sleep 2

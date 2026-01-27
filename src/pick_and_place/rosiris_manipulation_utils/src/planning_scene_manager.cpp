@@ -90,13 +90,10 @@ bool PlanningSceneManager::initialize()
   // Explicitly synchronize once to get current state
   planning_scene_monitor_->requestPlanningSceneState();
 
+  // Start publishing the planning scene
   planning_scene_monitor_->startPublishingPlanningScene(
     planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
 
-  // Optional: Continuously publish planning scene updates
-  // Uncomment if you want continuous publishing:
-  // planning_scene_monitor_->startPublishingPlanningScene(
-  //   planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
   return true;
 }
 
@@ -496,6 +493,7 @@ void PlanningSceneManager::attachCollisionObject(
     attached_obj.object.id = request->collision_object_id;
     attached_obj.object.operation = moveit_msgs::msg::CollisionObject::ADD;
     attached_obj.link_name = request->attach_to_link;
+    attached_obj.touch_links = request->allowed_touch_links;
 
     if (!scene->processAttachedCollisionObjectMsg(attached_obj))
     {
@@ -509,37 +507,6 @@ void PlanningSceneManager::attachCollisionObject(
     RCLCPP_INFO(
       get_logger(), "Attached object %s to link %s", request->collision_object_id.c_str(),
       request->attach_to_link.c_str());
-  }
-
-  // Apply collision matrix update
-  if (!request->collision_matrix_update.collision_entries.empty())
-  {
-    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
-    if (scene)
-    {
-      collision_detection::AllowedCollisionMatrix & acm =
-        scene->getAllowedCollisionMatrixNonConst();
-
-      if (!applyCollisionMatrixUpdate(acm, request->collision_matrix_update))
-      {
-        RCLCPP_WARN(get_logger(), "ACM update failed during attachment");
-      }
-    }
-  }
-  else
-  {
-    // Default behavior: Allow collision between object and attach_to_link
-    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
-    if (scene)
-    {
-      collision_detection::AllowedCollisionMatrix & acm =
-        scene->getAllowedCollisionMatrixNonConst();
-      acm.setEntry(request->collision_object_id, request->attach_to_link, true);
-
-      RCLCPP_DEBUG(
-        get_logger(), "Default ACM: Allowed collision %s <-> %s",
-        request->collision_object_id.c_str(), request->attach_to_link.c_str());
-    }
   }
 
   // Trigger planning scene update
@@ -580,7 +547,7 @@ void PlanningSceneManager::detachCollisionObject(
     moveit_msgs::msg::AttachedCollisionObject attached_obj;
     attached_obj.object.id = request->collision_object_id;
     attached_obj.object.operation = moveit_msgs::msg::CollisionObject::REMOVE;
-    attached_obj.link_name = request->detach_to_link;
+    attached_obj.link_name = request->detach_from_link;
 
     if (!scene->processAttachedCollisionObjectMsg(attached_obj))
     {
@@ -593,7 +560,7 @@ void PlanningSceneManager::detachCollisionObject(
 
     RCLCPP_INFO(
       get_logger(), "Detached object %s from link %s", request->collision_object_id.c_str(),
-      request->detach_to_link.c_str());
+      request->detach_from_link.c_str());
   }
 
   // Apply collision matrix update
