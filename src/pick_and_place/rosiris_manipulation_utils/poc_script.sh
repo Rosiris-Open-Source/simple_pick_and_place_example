@@ -3,53 +3,55 @@ set -e
 
 BOX_ID="box"
 FRAME="world"
-EEF_LINK="ee_link"
+EEF_LINK="end_effector_link"
 
 echo "Adding box..."
 
 ros2 service call \
   /planning_scene_manager/add_collision_objects \
   rosiris_manipulation_interfaces/srv/AddCollisionObjects \
-  "collision_objects:
-  - collision_object:
-      id: '${BOX_ID}'
-      header:
-        frame_id: '${FRAME}'
-      primitives:
-        - type: 1
-          dimensions: [0.2, 0.2, 0.2]
-      primitive_poses:
-        - position:
-            x: 0.5
-            y: 0.0
-            z: 0.1
-          orientation:
-            x: 0.0
-            y: 0.0
-            z: 0.0
-            w: 1.0
-    collision_entries: []"
+"collision_objects:
+- id: '${BOX_ID}'
+  header:
+    frame_id: '${FRAME}'
+  primitives:
+    - type: 1
+      dimensions: [0.2, 0.2, 0.2]
+  primitive_poses:
+    - position:
+        x: 0.5
+        y: 0.0
+        z: 0.1
+      orientation:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 1.0
+collision_matrix_update: []"
 
 sleep 2
 
 echo "Moving box..."
 
-ros2 service call /planning_scene_manager/move_collision_objects rosiris_manipulation_interfaces/srv/MoveCollisionObjects \
-"object_ids:
-- '${BOX_ID}'
-poses:
-- header:
-    frame_id: '${FRAME}'
+ros2 service call /planning_scene_manager/move_collision_objects \
+rosiris_manipulation_interfaces/srv/MoveCollisionObjects \
+"collision_object_pose_updates:
+- object_id: '${BOX_ID}'
   pose:
-    position:
-      x: 1.5
-      y: 1.5
-      z: 0.8
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0"
+    header:
+      frame_id: '${FRAME}'
+    pose:
+      position:
+        x: 1.5
+        y: 1.5
+        z: 0.8
+      orientation:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 1.0
+  collision_matrix_update: {}"
+
 
 sleep 2
 
@@ -57,12 +59,14 @@ echo "Allowing collisions for box..."
 
 ros2 service call \
   /planning_scene_manager/update_allowed_collisions \
-  rosiris_manipulation_interfaces/srv/UpdateAllowedCollisions \
-"object_ids: 
-- '${BOX_ID}'
-collision_entries:
-- object_id: 'desk_1_link'
-collision_allowed: true"
+  rosiris_manipulation_interfaces/srv/UpdateAllowedCollisions "
+collision_matrix_updates:
+- target_link: '${BOX_ID}'
+  mode: 1   # MERGE
+  collision_entries:
+  - touch_link: desk_1_link
+    collision_allowed: true
+"
 
 sleep 2
 
@@ -73,9 +77,7 @@ ros2 service call \
   rosiris_manipulation_interfaces/srv/AttachCollisionObject \
 "collision_object_id: '${BOX_ID}'
 attach_to_link: '${EEF_LINK}'
-collision_entries:
-- object_id: '${BOX_ID}'
-  collision_allowed: true"
+collision_matrix_update: {}"
 
 sleep 2
 
@@ -85,8 +87,8 @@ ros2 service call \
   /planning_scene_manager/detach_collision_object \
   rosiris_manipulation_interfaces/srv/DetachCollisionObject \
 "collision_object_id: '${BOX_ID}'
-detach_to_link: '${EEF_LINK}'
-collision_entries: []"
+detach_to_link: 'world'
+collision_matrix_update: {}"
 
 sleep 2
 

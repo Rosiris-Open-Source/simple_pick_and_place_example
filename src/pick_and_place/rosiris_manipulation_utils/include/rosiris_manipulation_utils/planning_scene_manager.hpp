@@ -32,9 +32,82 @@ public:
 
   virtual ~PlanningSceneManager();
 
-protected:
-  rclcpp::Client<moveit_msgs::srv::GetPlanningScene>::SharedPtr get_scene_client_;
-  rclcpp::Client<moveit_msgs::srv::ApplyPlanningScene>::SharedPtr apply_scene_update_client_;
+  /**
+   * @brief start the planning scene manager
+   */
+  bool initialize();
+
+private:
+  /**
+   * @brief start the service servers
+   */
+  void initializeServices();
+
+  /**
+   * @brief Apply collision matrix updates to ACM
+   */
+  std::vector<std::string> applyCollisionMatrixUpdates(
+    const std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> & updates);
+
+  /**
+   * @brief Apply single collision matrix update
+   */
+  bool applyCollisionMatrixUpdate(
+    collision_detection::AllowedCollisionMatrix & acm,
+    const rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate & update);
+  /**
+   * @brief Initialize ACM entries for new objects
+   */
+  void initializeObjectsInACM(
+    const std::vector<std::string> & object_ids, bool allow_self_collision = false);
+
+  /**
+   * @brief Remove objects from ACM
+   */
+  std::vector<std::string> removeObjectsFromACM(const std::vector<std::string> & object_ids);
+
+  /**
+   * @brief Validate objects exist in planning scene
+   */
+  void validateObjectsExist(
+    const std::vector<std::string> & object_ids, std::vector<std::string> & existing,
+    std::vector<std::string> & missing);
+
+  void addCollisionObjects(
+    const std::shared_ptr<rosiris_manipulation_interfaces::srv::AddCollisionObjects::Request>
+      request,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::AddCollisionObjects::Response> response);
+
+  void removeCollisionObjects(
+    const std::shared_ptr<rosiris_manipulation_interfaces::srv::RemoveCollisionObjects::Request>
+      request,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::RemoveCollisionObjects::Response>
+      response);
+
+  void attachCollisionObject(
+    const std::shared_ptr<rosiris_manipulation_interfaces::srv::AttachCollisionObject::Request>
+      request,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::AttachCollisionObject::Response>
+      response);
+
+  void detachCollisionObject(
+    const std::shared_ptr<rosiris_manipulation_interfaces::srv::DetachCollisionObject::Request>
+      request,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::DetachCollisionObject::Response>
+      response);
+
+  void moveCollisionObjects(
+    const std::shared_ptr<rosiris_manipulation_interfaces::srv::MoveCollisionObjects::Request>
+      request,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::MoveCollisionObjects::Response> response);
+
+  void updateAllowedCollisions(
+    const std::shared_ptr<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions::Request>
+      request,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions::Response>
+      response);
+
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 
   rclcpp::Service<rosiris_manipulation_interfaces::srv::AddCollisionObjects>::SharedPtr
     add_collision_objects_srv_;
@@ -48,36 +121,6 @@ protected:
     detach_collision_object_srv_;
   rclcpp::Service<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions>::SharedPtr
     update_allowed_collisions_srv_;
-
-  void initializeServices();
-
-  void addCollisionObjects(
-    const std::shared_ptr<rosiris_manipulation_interfaces::srv::AddCollisionObjects::Request> req,
-    std::shared_ptr<rosiris_manipulation_interfaces::srv::AddCollisionObjects::Response> res);
-
-  void removeCollisionObjects(
-    const std::shared_ptr<rosiris_manipulation_interfaces::srv::RemoveCollisionObjects::Request>
-      req,
-    std::shared_ptr<rosiris_manipulation_interfaces::srv::RemoveCollisionObjects::Response> res);
-
-  void moveCollisionObjects(
-    const std::shared_ptr<rosiris_manipulation_interfaces::srv::MoveCollisionObjects::Request> req,
-    std::shared_ptr<rosiris_manipulation_interfaces::srv::MoveCollisionObjects::Response> res);
-
-  void attachCollisionObject(
-    const std::shared_ptr<rosiris_manipulation_interfaces::srv::AttachCollisionObject::Request> req,
-    std::shared_ptr<rosiris_manipulation_interfaces::srv::AttachCollisionObject::Response> res);
-
-  void detachCollisionObject(
-    const std::shared_ptr<rosiris_manipulation_interfaces::srv::DetachCollisionObject::Request> req,
-    std::shared_ptr<rosiris_manipulation_interfaces::srv::DetachCollisionObject::Response> res);
-
-  void updateAllowedCollisions(
-    const std::shared_ptr<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions::Request>
-      req,
-    std::shared_ptr<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions::Response> res);
-
-  bool apply_planning_scene(const moveit_msgs::msg::PlanningScene & planning_scene);
 };
 }  // namespace rosiris_manipulation_utils
 

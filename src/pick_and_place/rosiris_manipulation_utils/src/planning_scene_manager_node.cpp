@@ -7,6 +7,7 @@ int main(int argc, char ** argv)
   rclcpp::executors::MultiThreadedExecutor exec(
     rclcpp::ExecutorOptions(), 0, false, std::chrono::milliseconds(250));
   auto node = std::make_shared<rosiris_manipulation_utils::PlanningSceneManager>();
+  node->initialize();
   exec.add_node(node);
   exec.spin();
   rclcpp::shutdown();
