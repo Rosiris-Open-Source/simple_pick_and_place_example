@@ -32,37 +32,37 @@ void PlanningSceneManager::initializeServices()
 {
   // Create service servers
   add_collision_objects_srv_ = create_service<rosiris_manip_srv::AddCollisionObjects>(
-    "planning_scene_manager/add_collision_objects",
+    std::string(get_name()) + "/add_collision_objects",
     std::bind(
       &PlanningSceneManager::addCollisionObjects, this, std::placeholders::_1,
       std::placeholders::_2));
 
   remove_collision_objects_srv_ = create_service<rosiris_manip_srv::RemoveCollisionObjects>(
-    "planning_scene_manager/remove_collision_objects",
+    std::string(get_name()) + "/remove_collision_objects",
     std::bind(
       &PlanningSceneManager::removeCollisionObjects, this, std::placeholders::_1,
       std::placeholders::_2));
 
   move_collision_objects_srv_ = create_service<rosiris_manip_srv::MoveCollisionObjects>(
-    "planning_scene_manager/move_collision_objects",
+    std::string(get_name()) + "/move_collision_objects",
     std::bind(
       &PlanningSceneManager::moveCollisionObjects, this, std::placeholders::_1,
       std::placeholders::_2));
 
   attach_collision_object_srv_ = create_service<rosiris_manip_srv::AttachCollisionObject>(
-    "planning_scene_manager/attach_collision_object",
+    std::string(get_name()) + "/attach_collision_object",
     std::bind(
       &PlanningSceneManager::attachCollisionObject, this, std::placeholders::_1,
       std::placeholders::_2));
 
   detach_collision_object_srv_ = create_service<rosiris_manip_srv::DetachCollisionObject>(
-    "planning_scene_manager/detach_collision_object",
+    std::string(get_name()) + "/detach_collision_object",
     std::bind(
       &PlanningSceneManager::detachCollisionObject, this, std::placeholders::_1,
       std::placeholders::_2));
 
   update_allowed_collisions_srv_ = create_service<rosiris_manip_srv::UpdateAllowedCollisions>(
-    "planning_scene_manager/update_allowed_collisions",
+    std::string(get_name()) + "/update_allowed_collisions",
     std::bind(
       &PlanningSceneManager::updateAllowedCollisions, this, std::placeholders::_1,
       std::placeholders::_2));
