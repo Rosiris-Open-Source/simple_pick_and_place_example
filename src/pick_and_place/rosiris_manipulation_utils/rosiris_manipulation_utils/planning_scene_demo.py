@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+import math
 
 import rclpy
 from rclpy.node import Node
-from rclpy.executors import MultiThreadedExecutor
+from rclpy.executors import SingleThreadedExecutor
 from geometry_msgs.msg import PoseStamped
-
-from moveit_msgs.msg import CollisionObject
 from shape_msgs.msg import SolidPrimitive
+from moveit_msgs.msg import CollisionObject
+from tf_transformations import quaternion_from_euler
 
 from rosiris_manipulation_interfaces.srv import (
     AddCollisionObjects,
@@ -14,8 +15,18 @@ from rosiris_manipulation_interfaces.srv import (
     AttachCollisionObject,
     DetachCollisionObject,
     RemoveCollisionObjects,
+    UpdateAllowedCollisions,
 )
-from rosiris_manipulation_interfaces.msg import CollisionEntry, CollisionObject as COWithCollisions
+from rosiris_manipulation_interfaces.msg import (
+    CollisionObjectPoseUpdate,
+    CollisionMatrixUpdate,
+    CollisionEntry,
+)
+
+
+BOX_ID = "box"
+FRAME = "world"
+EEF_LINK = "end_effector_link"
 
 
 class PlanningSceneDemo(Node):
@@ -33,128 +44,157 @@ class PlanningSceneDemo(Node):
             DetachCollisionObject, "/planning_scene_manager/detach_collision_object")
         self.remove_cli = self.create_client(
             RemoveCollisionObjects, "/planning_scene_manager/remove_collision_objects")
+        self.acm_cli = self.create_client(
+            UpdateAllowedCollisions, "/planning_scene_manager/update_allowed_collisions")
 
         for cli in [
             self.add_cli, self.move_cli, self.attach_cli,
-            self.detach_cli, self.remove_cli
+            self.detach_cli, self.remove_cli, self.acm_cli
         ]:
             cli.wait_for_service()
 
-        self.run_demo()
-
-    def run_demo(self):
-        self.add_objects()
+    def run(self):
+        print("start demo:")
         self.sleep(2.0)
 
-        self.move_objects()
+        print("Add box.")
+        self.add_box()
         self.sleep(2.0)
 
+        print("Move box in desk.")
+        pose = PoseStamped()
+        pose.header.frame_id = FRAME
+        pose.pose.position.x = 1.5
+        pose.pose.position.y = 1.5
+        pose.pose.position.z = 0.8
+        pose.pose.orientation.w = 1.0
+        self.move_box(pose=pose)
+        self.sleep(2.0)
+
+        print("Allow collisions box and desk.")
+        self.allow_box_desk_collision()
+        self.sleep(2.0)
+
+        print("Attach box to eef.")
         self.attach_box()
         self.sleep(2.0)
 
+        print("Detach box from eef.")
         self.detach_box()
         self.sleep(2.0)
 
-        self.remove_objects()
-        self.get_logger().info("Demo finished successfully")
+        print("Move box to world.")
+        pose.header.frame_id = FRAME
 
-    def add_objects(self):
-        self.get_logger().info("Adding box and cylinder")
+        pose.pose.position.x = 0.0
+        pose.pose.position.y = 0.0
+        pose.pose.position.z = 0.0
 
+        roll  = math.radians(45.0)
+        pitch = math.radians(45.0)
+        yaw   = math.radians(45.0)
+
+        qx, qy, qz, qw = quaternion_from_euler(roll, pitch, yaw)
+
+        pose.pose.orientation.x = qx
+        pose.pose.orientation.y = qy
+        pose.pose.orientation.z = qz
+        pose.pose.orientation.w = qw
+        self.move_box(pose=pose)
+        self.sleep(2.0)
+
+        print("remove box")
+        self.remove_box()
+
+        print("Demo finished")
+        exit()
+
+
+    def call_and_wait(self, client, request):
+        future = client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
+        return future.result()
+
+    # ---------- ADD ----------
+    def add_box(self):
         box = CollisionObject()
-        box.id = "box"
-        box.header.frame_id = "world"
+        box.id = BOX_ID
+        box.header.frame_id = FRAME
 
-        box_primitive = SolidPrimitive()
-        box_primitive.type = SolidPrimitive.BOX
-        box_primitive.dimensions = [0.2, 0.2, 0.2]
+        primitive = SolidPrimitive()
+        primitive.type = SolidPrimitive.BOX
+        primitive.dimensions = [0.2, 0.2, 0.2]
 
-        box_pose = PoseStamped()
-        box_pose.header.frame_id = "world"
-        box_pose.pose.position.x = 0.5
-        box_pose.pose.position.z = 0.1
-        box_pose.pose.orientation.w = 1.0
+        box.primitives = [primitive]
 
-        box.primitives = [box_primitive]
-        box.primitive_poses = [box_pose.pose]
+        pose = PoseStamped()
+        pose.header.frame_id = FRAME
+        pose.pose.position.x = 0.5
+        pose.pose.position.y = 0.0
+        pose.pose.position.z = 0.1
+        pose.pose.orientation.w = 1.0
 
-        cylinder = CollisionObject()
-        cylinder.id = "cylinder"
-        cylinder.header.frame_id = "world"
-
-        cyl_primitive = SolidPrimitive()
-        cyl_primitive.type = SolidPrimitive.CYLINDER
-        cyl_primitive.dimensions = [0.3, 0.05]  # height, radius
-
-        cyl_pose = PoseStamped()
-        cyl_pose.header.frame_id = "world"
-        cyl_pose.pose.position.x = 0.7
-        cyl_pose.pose.position.z = 0.15
-        cyl_pose.pose.orientation.w = 1.0
-
-        cylinder.primitives = [cyl_primitive]
-        cylinder.primitive_poses = [cyl_pose.pose]
+        box.primitive_poses = [pose.pose]
 
         req = AddCollisionObjects.Request()
-        req.collision_objects = [
-            COWithCollisions(collision_object=box, collisions=[]),
-            COWithCollisions(collision_object=cylinder, collisions=[]),
-        ]
+        req.collision_objects = [box]
+        req.collision_matrix_update = []
 
-        self.add_cli.call(req)
+        self.call_and_wait(self.add_cli, req)
 
-    def move_objects(self):
-        self.get_logger().info("Moving box and cylinder")
+    # ---------- MOVE ----------
+    def move_box(self, pose: PoseStamped):
+        update = CollisionObjectPoseUpdate()
+        update.object_id = BOX_ID
 
-        box_pose = PoseStamped()
-        box_pose.header.frame_id = "world"
-        box_pose.pose.position.x = 0.4
-        box_pose.pose.position.z = 0.2
-        box_pose.pose.orientation.w = 1.0
-
-        cyl_pose = PoseStamped()
-        cyl_pose.header.frame_id = "world"
-        cyl_pose.pose.position.x = 0.6
-        cyl_pose.pose.position.z = 0.25
-        cyl_pose.pose.orientation.w = 1.0
+        update.pose = pose
+        update.collision_matrix_update = CollisionMatrixUpdate()
 
         req = MoveCollisionObjects.Request()
-        req.object_id = ["box", "cylinder"]
-        req.pose = [box_pose, cyl_pose]
+        req.collision_object_pose_updates = [update]
 
-        self.move_cli.call(req)
+        self.call_and_wait(self.move_cli, req)
 
+    # ---------- ACM ----------
+    def allow_box_desk_collision(self):
+        entry = CollisionEntry()
+        entry.touch_link = "desk_1_link"
+        entry.collision_allowed = True
+
+        cmu = CollisionMatrixUpdate()
+        cmu.target_link = BOX_ID
+        cmu.mode = CollisionMatrixUpdate.MERGE
+        cmu.collision_entries = [entry]
+
+        req = UpdateAllowedCollisions.Request()
+        req.collision_matrix_updates = [cmu]
+
+        self.call_and_wait(self.acm_cli, req)
+
+    # ---------- ATTACH ----------
     def attach_box(self):
-        self.get_logger().info("Attaching box to end effector")
-
-        collision = CollisionEntry()
-        collision.object_id = "box"
-        collision.collision_allowed = True
-
         req = AttachCollisionObject.Request()
-        req.collision_object_id = "box"
-        req.attach_to_link = "ee_link"
-        req.collisions = [collision]
+        req.collision_object_id = BOX_ID
+        req.attach_to_link = EEF_LINK
+        req.allowed_touch_links = []
 
-        self.attach_cli.call(req)
+        self.call_and_wait(self.attach_cli, req)
 
+    # ---------- DETACH ----------
     def detach_box(self):
-        self.get_logger().info("Detaching box from end effector")
-
         req = DetachCollisionObject.Request()
-        req.collision_object_id = "box"
-        req.detach_to_link = "ee_link"
-        req.collisions = []
+        req.detach_from_link = EEF_LINK
+        req.collision_object_id = BOX_ID
+        req.collision_matrix_update = CollisionMatrixUpdate()
 
-        self.detach_cli.call(req)
+        self.call_and_wait(self.detach_cli, req)
 
-    def remove_objects(self):
-        self.get_logger().info("Removing box and cylinder")
-
+    # ---------- REMOVE ----------
+    def remove_box(self):
         req = RemoveCollisionObjects.Request()
-        req.object_id = ["box", "cylinder"]
+        req.object_ids = [BOX_ID]
 
-        self.remove_cli.call(req)
+        self.call_and_wait(self.remove_cli, req)
 
     def sleep(self, seconds: float):
         self.get_clock().sleep_for(
@@ -165,13 +205,13 @@ class PlanningSceneDemo(Node):
 def main():
     rclpy.init()
     node = PlanningSceneDemo()
-    executor = MultiThreadedExecutor()
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+    node.run()
     try:
-        rclpy.spin(node, executor)
+        executor.spin()
     except KeyboardInterrupt:
         pass
-
-    executor.shutdown()
     node.destroy_node()
     rclpy.shutdown()
 
