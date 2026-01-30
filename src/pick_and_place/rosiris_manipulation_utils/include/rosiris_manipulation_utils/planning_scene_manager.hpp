@@ -29,10 +29,8 @@ class PlanningSceneManager : public rclcpp::Node
 {
 public:
   PlanningSceneManager(
-    std::string node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
-
-  // needed for rclcpp_components
-  explicit PlanningSceneManager(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+    std::string node_name = "planning_scene_manager",
+    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
   virtual ~PlanningSceneManager();
 

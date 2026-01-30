@@ -19,13 +19,6 @@ PlanningSceneManager::PlanningSceneManager(
   RCLCPP_INFO(this->get_logger(), "initialization complete. Ready to receive requests.");
 }
 
-PlanningSceneManager::PlanningSceneManager(const rclcpp::NodeOptions & options)
-: Node("planning_scene_manager", options)
-{
-  initializeServices();
-  RCLCPP_INFO(this->get_logger(), "initialization complete. Ready to receive requests.");
-}
-
 PlanningSceneManager::~PlanningSceneManager() {}
 
 void PlanningSceneManager::initializeServices()
@@ -751,6 +744,3 @@ void PlanningSceneManager::updateAllowedCollisions(
 }
 
 }  // namespace rosiris_manipulation_utils
-
-// register the component with class_loader
-RCLCPP_COMPONENTS_REGISTER_NODE(rosiris_manipulation_utils::PlanningSceneManager)

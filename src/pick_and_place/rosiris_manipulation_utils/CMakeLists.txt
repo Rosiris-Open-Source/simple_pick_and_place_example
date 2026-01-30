@@ -13,7 +13,6 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   moveit_msgs
   moveit_ros_planning
   rclcpp
-  rclcpp_components
   rosiris_manipulation_interfaces
   shape_msgs
   std_srvs
@@ -29,14 +28,9 @@ add_library(planning_scene_manager_component SHARED
 )
 target_include_directories(planning_scene_manager_component PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/planning_scene_manager_component>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 ament_target_dependencies(planning_scene_manager_component  ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
-rclcpp_components_register_nodes(planning_scene_manager_component
-  PLUGIN "rosiris_manipulation_utils::PlanningSceneManager"
-  EXECUTABLE planning_scene_manager
-)
 
 install(TARGETS 
   planning_scene_manager_component
