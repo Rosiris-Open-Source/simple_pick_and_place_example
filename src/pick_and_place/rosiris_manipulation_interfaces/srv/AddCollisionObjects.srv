@@ -1,5 +1,4 @@
-moveit_msgs/CollisionObject[] collision_objects
-CollisionMatrixUpdate[] collision_matrix_update
+CollisionObject[] collision_objects
 ---
 ServiceResult result
 string[] added_object_ids

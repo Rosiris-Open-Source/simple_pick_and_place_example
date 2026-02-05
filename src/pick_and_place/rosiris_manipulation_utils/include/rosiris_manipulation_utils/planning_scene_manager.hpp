@@ -15,6 +15,7 @@
 #include <moveit_msgs/msg/planning_scene.hpp>
 #include <moveit_msgs/srv/apply_planning_scene.hpp>
 
+#include <rosiris_manipulation_interfaces/msg/collision_object.hpp>
 // services
 #include <rosiris_manipulation_interfaces/srv/add_collision_objects.hpp>
 #include <rosiris_manipulation_interfaces/srv/attach_collision_object.hpp>
@@ -22,7 +23,6 @@
 #include <rosiris_manipulation_interfaces/srv/move_collision_objects.hpp>
 #include <rosiris_manipulation_interfaces/srv/remove_collision_objects.hpp>
 #include <rosiris_manipulation_interfaces/srv/update_allowed_collisions.hpp>
-
 namespace rosiris_manipulation_utils
 {
 class PlanningSceneManager : public rclcpp::Node
@@ -61,7 +61,7 @@ private:
    * @brief Initialize ACM entries for new objects
    */
   void initializeObjectsInACM(
-    const std::vector<std::string> & object_ids, bool allow_self_collision = false);
+    const std::vector<rosiris_manipulation_interfaces::msg::CollisionObject> & objs);
 
   /**
    * @brief Remove objects from ACM
@@ -74,6 +74,11 @@ private:
   void validateObjectsExist(
     const std::vector<std::string> & object_ids, std::vector<std::string> & existing,
     std::vector<std::string> & missing);
+
+  rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate
+  convert_touch_links_to_collision_matrix_update(
+    const std::string & target_link, const std::vector<std::string> & touch_links, uint8_t mode,
+    bool allow_touch);
 
   void addCollisionObjects(
     const std::shared_ptr<rosiris_manipulation_interfaces::srv::AddCollisionObjects::Request>

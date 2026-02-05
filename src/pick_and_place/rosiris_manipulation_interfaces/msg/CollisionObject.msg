@@ -1,0 +1,3 @@
+moveit_msgs/CollisionObject collision_object
+bool self_collision_allowed
+string[] allowed_touch_links

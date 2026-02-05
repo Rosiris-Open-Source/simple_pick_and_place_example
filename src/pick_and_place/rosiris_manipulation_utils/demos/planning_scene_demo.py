@@ -18,6 +18,7 @@ from rosiris_manipulation_interfaces.srv import (
     UpdateAllowedCollisions,
 )
 from rosiris_manipulation_interfaces.msg import (
+    CollisionObject as RosirisCollisionObject,
     CollisionObjectPoseUpdate,
     CollisionMatrixUpdate,
     CollisionEntry,
@@ -137,8 +138,9 @@ class PlanningSceneDemo(Node):
         box.primitive_poses = [pose.pose]
 
         req = AddCollisionObjects.Request()
-        req.collision_objects = [box]
-        req.collision_matrix_update = []
+        collision_obj = RosirisCollisionObject()
+        collision_obj.collision_object = box
+        req.collision_objects.append(collision_obj)
 
         self.call_and_wait(self.add_cli, req)
 
@@ -185,7 +187,7 @@ class PlanningSceneDemo(Node):
         req = DetachCollisionObject.Request()
         req.detach_from_link = EEF_LINK
         req.collision_object_id = BOX_ID
-        req.collision_matrix_update = CollisionMatrixUpdate()
+        req.disallowed_touch_links = []
 
         self.call_and_wait(self.detach_cli, req)
 

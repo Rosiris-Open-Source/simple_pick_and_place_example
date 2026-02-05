@@ -8,6 +8,7 @@ namespace rosiris_manipulation_utils
 {
 
 namespace rosiris_manip_srv = rosiris_manipulation_interfaces::srv;
+namespace rosiris_manip_msg = rosiris_manipulation_interfaces::msg;
 using rosiris_srv_error_codes = rosiris_manipulation_interfaces::msg::ServiceErrorCode;
 using rosiris_srv_result = rosiris_manipulation_interfaces::msg::ServiceResult;
 
@@ -218,9 +219,9 @@ bool PlanningSceneManager::applyCollisionMatrixUpdate(
  * @brief Initialize ACM entries for new objects
  */
 void PlanningSceneManager::initializeObjectsInACM(
-  const std::vector<std::string> & object_ids, bool allow_self_collision)
+  const std::vector<rosiris_manip_msg::CollisionObject> & objs)
 {
-  if (object_ids.empty())
+  if (objs.empty())
   {
     return;
   }
@@ -235,27 +236,13 @@ void PlanningSceneManager::initializeObjectsInACM(
   collision_detection::AllowedCollisionMatrix & acm = scene->getAllowedCollisionMatrixNonConst();
 
   // Add each object to ACM with default: disallow collision with everything
-  for (const auto & object_id : object_ids)
+  for (const auto & obj : objs)
   {
-    if (!acm.hasEntry(object_id))
+    if (!acm.hasEntry(obj.collision_object.id))
     {
-      acm.setDefaultEntry(object_id, false);
-      RCLCPP_DEBUG(get_logger(), "Initialized ACM entry for: %s", object_id.c_str());
-    }
-  }
-
-  // Optionally allow collisions between the new objects themselves
-  if (allow_self_collision && object_ids.size() > 1)
-  {
-    for (size_t i = 0; i < object_ids.size(); ++i)
-    {
-      for (size_t j = i + 1; j < object_ids.size(); ++j)
-      {
-        acm.setEntry(object_ids[i], object_ids[j], true);
-        RCLCPP_DEBUG(
-          get_logger(), "Allowed self-collision: %s <-> %s", object_ids[i].c_str(),
-          object_ids[j].c_str());
-      }
+      acm.setDefaultEntry(obj.collision_object.id, false);
+      acm.setEntry(obj.collision_object.id, obj.collision_object.id, obj.self_collision_allowed);
+      RCLCPP_DEBUG(get_logger(), "Initialized ACM entry for: %s", obj.collision_object.id.c_str());
     }
   }
 }
@@ -326,6 +313,10 @@ void PlanningSceneManager::addCollisionObjects(
 {
   std::vector<std::string> added_ids;
   std::vector<std::string> not_added_ids;
+  std::vector<rosiris_manip_msg::CollisionObject> added_objs;
+  added_objs.reserve(request->collision_objects.size());
+  std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> cmus;
+  cmus.reserve(request->collision_objects.size());
 
   {
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
@@ -339,17 +330,21 @@ void PlanningSceneManager::addCollisionObjects(
     }
 
     // Add objects to planning scene
-    for (const auto & obj : request->collision_objects)
+    for (auto & obj : request->collision_objects)
     {
-      if (scene->processCollisionObjectMsg(obj))
+      if (scene->processCollisionObjectMsg(obj.collision_object))
       {
-        added_ids.push_back(obj.id);
-        RCLCPP_INFO(get_logger(), "Added collision object: %s", obj.id.c_str());
+        added_ids.push_back(obj.collision_object.id);
+        cmus.push_back(convert_touch_links_to_collision_matrix_update(
+          obj.collision_object.id, obj.allowed_touch_links,
+          rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::MERGE, true));
+        added_objs.push_back(std::move(obj));
       }
       else
       {
-        not_added_ids.push_back(obj.id);
-        RCLCPP_WARN(get_logger(), "Failed to add collision object: %s", obj.id.c_str());
+        not_added_ids.push_back(obj.collision_object.id);
+        RCLCPP_WARN(
+          get_logger(), "Failed to add collision object: %s", obj.collision_object.id.c_str());
       }
     }
   }
@@ -363,25 +358,9 @@ void PlanningSceneManager::addCollisionObjects(
   }
 
   // Initialize ACM entries for successfully added objects
-  if (!added_ids.empty())
-  {
-    initializeObjectsInACM(added_ids, false);
-  }
+  initializeObjectsInACM(added_objs);
 
-  // collect ACM updates that target the newly added objects
-  std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> added_obj_acm_updates;
-  added_obj_acm_updates.reserve(added_ids.size());
-  for (const auto & update : request->collision_matrix_update)
-  {
-    if (std::find(added_ids.begin(), added_ids.end(), update.target_link) != added_ids.end())
-    {
-      added_obj_acm_updates.push_back(update);
-    }
-  }
-
-  // For the added objects, apply any requested ACM updates
-  auto [acm_updated_links, acm_updated_failed_links] =
-    applyCollisionMatrixUpdates(added_obj_acm_updates);
+  auto [acm_updated_links, acm_updated_failed_links] = applyCollisionMatrixUpdates(cmus);
 
   planning_scene_monitor_->triggerSceneUpdateEvent(
     planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
@@ -581,9 +560,11 @@ void PlanningSceneManager::detachCollisionObject(
   }
 
   // Apply collision matrix update
-  std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> updates = {
-    request->collision_matrix_update};
-  auto [acm_updated_links, acm_updated_failed_links] = applyCollisionMatrixUpdates(updates);
+  std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> cmus;
+  cmus.push_back(convert_touch_links_to_collision_matrix_update(
+    request->collision_object_id, request->disallowed_touch_links,
+    rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::MERGE, false));
+  auto [acm_updated_links, acm_updated_failed_links] = applyCollisionMatrixUpdates(cmus);
 
   planning_scene_monitor_->triggerSceneUpdateEvent(
     planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
@@ -741,6 +722,24 @@ void PlanningSceneManager::updateAllowedCollisions(
     response->not_updated_object_ids.empty()
       ? "ACM updated successfully"
       : "Failed to update " + std::to_string(response->not_updated_object_ids.size()) + " link(s)";
+}
+
+rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate
+PlanningSceneManager::convert_touch_links_to_collision_matrix_update(
+  const std::string & target_link, const std::vector<std::string> & touch_links, uint8_t mode,
+  bool allow_touch)
+{
+  rosiris_manip_msg::CollisionMatrixUpdate cmu;
+  cmu.target_link = target_link;
+  cmu.mode = mode;
+  for (const std::string & touch_link : touch_links)
+  {
+    rosiris_manip_msg::CollisionEntry entry;
+    entry.touch_link = touch_link;
+    entry.collision_allowed = allow_touch;
+    cmu.collision_entries.push_back(entry);
+  }
+  return cmu;
 }
 
 }  // namespace rosiris_manipulation_utils

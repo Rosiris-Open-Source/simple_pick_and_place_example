@@ -20,6 +20,7 @@ endforeach()
 set(msg_files
   msg/CollisionEntry.msg
   msg/CollisionMatrixUpdate.msg
+  msg/CollisionObject.msg
   msg/CollisionObjectPoseUpdate.msg
   msg/ServiceErrorCode.msg
   msg/ServiceResult.msg

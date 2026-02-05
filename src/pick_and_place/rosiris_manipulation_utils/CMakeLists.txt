@@ -7,6 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   geometry_msgs
   moveit_core
@@ -57,6 +58,13 @@ install(TARGETS
 install(
   DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
+)
+
+ament_python_install_package(demos)
+
+install(PROGRAMS
+  demos/planning_scene_demo.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

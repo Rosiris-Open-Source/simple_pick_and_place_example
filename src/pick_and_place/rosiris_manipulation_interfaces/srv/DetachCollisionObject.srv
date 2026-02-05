@@ -1,5 +1,5 @@
 string detach_from_link
 string collision_object_id 
-CollisionMatrixUpdate collision_matrix_update
+string[] disallowed_touch_links
 ---
 ServiceResult result
