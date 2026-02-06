@@ -1,13 +1,30 @@
+# Copyright 2026 Manuel Muth
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #!/usr/bin/env python3
 import math
+from urllib.parse import urlparse
 
 import rclpy
-from rclpy.node import Node
-from rclpy.executors import SingleThreadedExecutor
+
 from geometry_msgs.msg import PoseStamped
-from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.msg import CollisionObject
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.node import Node
+from shape_msgs.msg import Mesh, SolidPrimitive
 from tf_transformations import quaternion_from_euler
+from rosiris_manipulation_utils.mesh_loader import MeshLoader
 
 from rosiris_manipulation_interfaces.srv import (
     AddCollisionObjects,
@@ -127,6 +144,13 @@ class PlanningSceneDemo(Node):
         primitive.dimensions = [0.2, 0.2, 0.2]
 
         box.primitives = [primitive]
+
+        mesh_path = "package://rosiris_environment_description_common/meshes/desk/desk_visual.stl"
+        try:
+            mesh : Mesh = MeshLoader.mesh_from_file(path=mesh_path)
+            box.meshes = [mesh]
+        except (FileNotFoundError, RuntimeError) as e:
+            self.get_logger().warn(f"Could not create mesh from file: {e}. Fallback to primitive only.")
 
         pose = PoseStamped()
         pose.header.frame_id = FRAME

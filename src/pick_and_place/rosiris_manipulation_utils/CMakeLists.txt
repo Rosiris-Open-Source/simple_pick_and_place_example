@@ -60,12 +60,7 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
-ament_python_install_package(demos)
-
-install(PROGRAMS
-  demos/planning_scene_demo.py
-  DESTINATION lib/${PROJECT_NAME}
-)
+ament_python_install_package(rosiris_manipulation_utils)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
