@@ -7,6 +7,13 @@
             "request": "launch",
             "target": "${workspaceFolder}/src/pick_and_place/rosiris_manipulation_utils/launch/planning_scene_manager_node.launch.py",
             "arguments": []
+        },
+        {
+            "name": "Scenario Manager",
+            "type": "ros2",
+            "request": "launch",
+            "target": "${workspaceFolder}/src/pick_and_place/rosiris_manipulation_utils/launch/scenario_manager_node.launch.py",
+            "arguments": []
         }
     ]
 }
