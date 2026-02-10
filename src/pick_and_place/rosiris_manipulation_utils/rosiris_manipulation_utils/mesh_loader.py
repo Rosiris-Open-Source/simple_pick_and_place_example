@@ -11,63 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import os
 import pyassimp
 
-from urllib.parse import urlparse
 from pathlib import Path
-from ament_index_python import get_package_share_directory
 
 from geometry_msgs.msg import Point
 from shape_msgs.msg import Mesh, MeshTriangle
 
+from rosiris_manipulation_utils.utilities import resolve_resource_path
+
 class MeshLoader:  
 
-    @staticmethod
-    def resolve_mesh_path(*, uri: str, base_dir: str | None = None) -> Path:
-        """
-        Resolve paths of type:
-        - absolute paths
-        - relative paths
-        - package:// URIs
-
-        :param uri: mesh path or URI
-        :param base_dir: optional base directory for relative paths
-        :return: absolute filesystem path
-        """
-
-        # 1) package:// URI
-        if uri.startswith("package://"):
-            parsed = urlparse(uri)
-            pkg_name = parsed.netloc
-            rel_path = parsed.path.lstrip("/")
-
-            pkg_share = get_package_share_directory(pkg_name)
-            abs_path = os.path.join(pkg_share, rel_path)
-
-            if not os.path.exists(abs_path):
-                raise FileNotFoundError(abs_path)
-
-            return Path(abs_path)
-
-        # 2) Absolute path
-        if os.path.isabs(uri):
-            abs_path = uri
-            if not os.path.exists(abs_path):
-                raise FileNotFoundError(abs_path)
-            return Path(abs_path)
-
-        # 3) Relative path
-        if not base_dir or not base_dir.strip():
-            base_dir = os.getcwd()
-
-        abs_path = os.path.abspath(os.path.join(base_dir, uri))
-
-        if not os.path.exists(abs_path):
-            raise FileNotFoundError(abs_path)
-
-        return Path(abs_path)
 
     @staticmethod
     def mesh_from_file(*, path: str| Path, base_dir: str | None = None, scale=(1.0, 1.0, 1.0)) -> Mesh:
@@ -75,7 +29,7 @@ class MeshLoader:
         Load mesh file (STL, DAE, OBJ, etc.) into shape_msgs/msg/Mesh
         using pyassimp 
         """
-        mesh_uri = MeshLoader.resolve_mesh_path(uri=path, base_dir=base_dir)
+        mesh_uri = resolve_resource_path(uri=path, base_dir=base_dir)
 
         with pyassimp.load(str(mesh_uri)) as scene:
             if not scene.meshes:
