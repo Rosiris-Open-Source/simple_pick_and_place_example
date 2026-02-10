@@ -1,2 +1,6 @@
+# Trashed files
+**/.Trash-*/
+**/.nfs*
 # Python
-__pycache__/
+**/__pycache__/
+**/__123_test_around_123__.py
