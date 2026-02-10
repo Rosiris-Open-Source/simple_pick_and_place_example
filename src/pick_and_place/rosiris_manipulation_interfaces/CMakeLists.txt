@@ -30,6 +30,7 @@ set(srv_files
   srv/AddCollisionObjects.srv
   srv/AttachCollisionObject.srv
   srv/DetachCollisionObject.srv
+  srv/LoadScenario.srv
   srv/MoveCollisionObjects.srv
   srv/RemoveCollisionObjects.srv
   srv/UpdateAllowedCollisions.srv
