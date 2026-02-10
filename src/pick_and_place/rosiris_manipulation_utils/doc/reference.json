@@ -1,0 +1,89 @@
+{
+  "scene_manager_operation": {
+    "ADD": 0,
+    "REMOVE": 1,
+    "APPEND": 2,
+    "MOVE": 3
+  },
+  "solid_primitive_type": {
+    "BOX": 1,
+    "SPHERE": 2,
+    "CYLINDER": 3,
+    "CONE": 4,
+    "PRISM": 5
+  },
+  "cmu_mode": {
+    "REPLACE": 0,
+    "MERGE": 1,
+    "REMOVE": 2
+  },
+  "data_types": {
+    "metadata": {
+      "schema_version": "string",
+      "name": "string",
+      "author": "string",
+      "description": "string",
+      "created": "string"
+    },
+    "stamp": {
+      "sec": "int",
+      "nanosec": "int"
+    },
+    "header": {
+      "frame_id": "string",
+      "stamp": "stamp"
+    },
+    "position": {
+      "x": "float",
+      "y": "float",
+      "z": "float"
+    },
+    "orientation_rpy": {
+      "r": "float",
+      "p": "float",
+      "y": "float"
+    },
+    "pose": {
+      "position": "position",
+      "orientation": "orientation_rpy"
+    },
+    "primitive": {
+      "type": "solid_primitive_type",
+      "dimensions": ["float"],
+      "pose": "pose"
+    },
+    "mesh": {
+      "path": "string",
+      "pose": "pose"
+    },
+    "subframe": {
+      "name": "string",
+      "pose": "pose"
+    },
+    "collision_object": {
+      "header": "header",
+      "id": "string",
+      "pose": "pose",
+      "primitives": ["primitive"],
+      "meshes": ["mesh"],
+      "subframes": ["subframe"],
+      "operation": "scene_manager_operation",
+      "self_collision_allowed": "bool",
+      "allowed_touch_links": ["string"]
+    },
+    "collision_entry": {
+      "touch_link": "string",
+      "collision_allowed": "bool"
+    },
+    "collision_matrix_update": {
+      "target_link": "string",
+      "mode": "cmu_mode",
+      "collision_entries": ["collision_entry"]
+    },
+    "scenario": {
+      "metadata": "metadata",
+      "collision_objects": ["collision_object"],
+      "collision_matrix_updates": ["collision_matrix_update"]
+    }
+  }
+}
