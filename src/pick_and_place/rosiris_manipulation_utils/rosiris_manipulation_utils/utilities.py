@@ -17,9 +17,10 @@ import os
 from urllib.parse import urlparse
 from pathlib import Path
 from ament_index_python import get_package_share_directory
+from typing import Iterable
 
 
-def resolve_resource_path(*, uri: str, base_dir: str | None = None, file_types: str | list[str] | None = None) -> Path:
+def resolve_resource_path(*, uri: str, base_dir: str | None = None, file_types: str | Iterable[str] | None = None) -> Path:
     """
     Resolve paths of type:
     - absolute paths
@@ -73,7 +74,7 @@ def _check_file_exists(abs_res_path: Path) -> None:
         raise FileNotFoundError(abs_res_path)
 
 
-def _check_file_type(abs_res_path: Path, file_types: str | list[str]) -> None:
+def _check_file_type(abs_res_path: Path, file_types: str | Iterable[str]) -> None:
     """
     Check if the abs_res_path resolves to the expected file type given by file_types
 
@@ -82,14 +83,14 @@ def _check_file_type(abs_res_path: Path, file_types: str | list[str]) -> None:
     :return: None, raise ValueError on file not of file_types
     """
     if isinstance(file_types, str):
-        file_types = [file_types]
+        file_types = (file_types,)
+    else:
+        file_types = tuple(file_types)
 
-    normalized = []
-    for ft in file_types:
-        ft = ft.lower()
-        if not ft.startswith("."):
-            ft = f".{ft}"
-        normalized.append(ft)
+    normalized = tuple(
+        ft.lower() if ft.startswith(".") else f".{ft.lower()}"
+        for ft in file_types
+    )
 
     if abs_res_path.suffix.lower() not in normalized:
         raise ValueError(

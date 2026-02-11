@@ -18,7 +18,7 @@ from dataclasses import fields, is_dataclass
 from enum import IntEnum
 from packaging.version import Version
 from pathlib import Path
-from typing import override, Type, TypeVar, Any, Dict, Generic
+from typing import override, Type, TypeVar, Any, Dict, Generic, ClassVar,Final
 
 from rosiris_manipulation_utils.scenario_models import Scenario
 from rosiris_manipulation_utils.utilities import resolve_resource_path
@@ -28,15 +28,15 @@ class LoadScenarioError(Exception):
     pass
 
 class ScenarioLoader(ABC):
-
     @abstractmethod
     def load_scenario(self, path: Path) -> Scenario:
         pass
 
 T = TypeVar("T")
 class YamlScenarioLoader(ScenarioLoader, Generic[T]):
-    CURRENT_SCHEMA_VERSION = Version("1.0.0")
-    MIN_SUPPORTED_VERSION = Version("1.0.0")
+    ALLOWED_FILES: ClassVar[tuple[str, ...]] = (".yaml", ".yml", ".json")
+    CURRENT_SCHEMA_VERSION : Final[Version] = Version("1.0.0")
+    MIN_SUPPORTED_VERSION : Final[Version] = Version("1.0.0")
 
     @override
     def load_scenario(self, path: str) -> Scenario:
