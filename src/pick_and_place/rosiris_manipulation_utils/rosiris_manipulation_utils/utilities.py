@@ -54,16 +54,16 @@ def resolve_resource_path(*, uri: str, base_dir: str | None = None, file_types: 
     
     abs_res_path = Path(abs_res)
     
-    _check_file_exists(abs_res_path)
+    check_file_exists(abs_res_path)
     
     if file_types:
-        _check_file_type(abs_res_path, file_types)
+        check_file_type(abs_res_path, file_types)
 
 
     return abs_res_path
 
 
-def _check_file_exists(abs_res_path: Path) -> None:
+def check_file_exists(abs_res_path: Path) -> None:
     """
     Check if the file exists at the given path
 
@@ -83,7 +83,7 @@ def get_file_type(abs_res_path: str | Path) -> str:
     abs_res_path = Path(abs_res_path)
     return "".join(abs_res_path.suffixes).lower()
 
-def _check_file_type(abs_res_path: Path, file_types: str | Iterable[str]) -> None:
+def check_file_type(abs_res_path: Path, file_types: str | Iterable[str]) -> None:
     """
     Check if the abs_res_path resolves to the expected file type given by file_types
 
