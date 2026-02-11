@@ -72,7 +72,16 @@ def _check_file_exists(abs_res_path: Path) -> None:
     """
     if not abs_res_path.exists() or not abs_res_path.is_file():
         raise FileNotFoundError(abs_res_path)
-
+    
+def get_file_type(abs_res_path: str | Path) -> str:
+    """
+    Return the type of a passed path
+    
+    :param abs_res_path: Path to the file
+    :return: type of file e.g. .yaml for file.yaml, archive.tar.gz for file.archive.tar.gz
+    """
+    abs_res_path = Path(abs_res_path)
+    return "".join(abs_res_path.suffixes).lower()
 
 def _check_file_type(abs_res_path: Path, file_types: str | Iterable[str]) -> None:
     """
