@@ -1,0 +1,33 @@
+metadata:
+  name: "Tower of Hanoi"
+  author: "Manuel M."
+  description: "Tower of Hanoi with simple box primitives"
+  schema_version: 1.0.0
+  time_stamp: 2026-02-11T08:33:23.481Z
+
+# List of CollisionObjects (mapped to moveit_msgs/CollisionObject)
+collision_objects:
+  - id: "cube_1"
+    header:
+      frame_id: "desk_1_place_location_right"
+    pose: { position: {z: 0.03}}
+    primitives:
+      - type: BOX
+        dimensions: [0.06, 0.06, 0.06]
+    allowed_touch_links : ["desk_1_link"]
+  - id: "cube_2"
+    header:
+      frame_id: "desk_1_place_location_right"
+    pose: { position: {z: 0.085}}
+    primitives:
+      - type: BOX
+        dimensions: [0.05, 0.05, 0.05]
+    allowed_touch_links : ["cube_1"]
+  - id: "cube_3"
+    header:
+      frame_id: "desk_1_place_location_right"
+    pose: { position: {z: 0.13}}
+    primitives:
+      - type: BOX
+        dimensions: [0.04, 0.04, 0.04]
+    allowed_touch_links : ["cube_2"]

@@ -125,6 +125,13 @@ def generate_launch_description():
         arguments=["robotiq_gripper_controller", "-c", "/controller_manager"],
     )
 
+    scene_manager = Node(
+            package="rosiris_manipulation_utils", 
+            executable="planning_scene_manager_node",    
+            name="planning_scene_manager",
+            output="screen"                      
+        )
+
     return LaunchDescription(
         [
             rviz_config_arg,
@@ -136,5 +143,6 @@ def generate_launch_description():
             joint_state_broadcaster_spawner,
             arm_controller_spawner,
             hand_controller_spawner,
+            scene_manager
         ]
     )

@@ -31,16 +31,38 @@
     <xacro:property name="initial_positions_file" default="$(arg initial_positions_file)"/>
     <link name="world" />
 
+    <xacro:property name="desk_number" value="1"/>
     <xacro:include filename="$(find rosiris_environment_description_common)/description/desk/desk_macro.xacro" />
     <xacro:desk
         prefix="$(arg prefix)"
         parent="world" 
-        number="1"
+        number="${desk_number}"
         desk_height="0.8"
         desk_base_width="1"
         desk_base_length="1.5">
         <origin xyz="1 1 0" rpy="0 0 0" />
     </xacro:desk>
+
+    <link name="$(arg prefix)desk_${desk_number}_place_location_left"/>
+    <joint name="$(arg prefix)desk_${desk_number}_place_location_left_joint" type="fixed">
+        <parent link="$(arg prefix)desk_${desk_number}_tabletop_link"/>
+        <child link="$(arg prefix)desk_${desk_number}_place_location_left"/>
+        <origin xyz="0.5 1.15 0.0" rpy="0 0 0" />
+    </joint>
+
+    <link name="$(arg prefix)desk_${desk_number}_place_location_middle"/>
+    <joint name="$(arg prefix)desk_${desk_number}_place_location_middle_joint" type="fixed">
+        <parent link="$(arg prefix)desk_${desk_number}_tabletop_link"/>
+        <child link="$(arg prefix)desk_${desk_number}_place_location_middle"/>
+        <origin xyz="0.5 0.8 0.0" rpy="0 0 0" />
+    </joint>
+
+    <link name="$(arg prefix)desk_${desk_number}_place_location_right"/>
+    <joint name="$(arg prefix)desk_${desk_number}_place_location_right_joint" type="fixed">
+        <parent link="$(arg prefix)desk_${desk_number}_tabletop_link"/>
+        <child link="$(arg prefix)desk_${desk_number}_place_location_right"/>
+        <origin xyz="0.5 0.45 0.0" rpy="0 0 0" />
+    </joint>
 
     <xacro:include filename="$(find rosiris_environment_description_common)/description/robot_mounts/simple_robot_mounts.xacro" />
     <xacro:cuboid_mount

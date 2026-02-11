@@ -26,7 +26,7 @@ metadata:
   name: string                    # Optional, default: ""
   author: string                  # Optional, default: ""
   description: string             # Optional, default: ""
-  created: string                 # Optional, default: "", format: ISO 8601 or custom
+  created: string                 # Optional, default: "", format: ISO 8601
 
 stamp:
   sec: int                        # Optional, default: 0

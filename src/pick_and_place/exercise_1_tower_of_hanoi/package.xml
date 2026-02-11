@@ -8,20 +8,24 @@
   <license>CC-BY-NC-SA-4.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
-  <exec_depend>gz_ros2_control</exec_depend>
   <exec_depend>joint_state_publisher</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch</exec_depend>
-  <exec_depend>ros_gz_bridge</exec_depend>
-  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rosiris_manipulation_utils</exec_depend>
   <exec_depend>rviz2</exec_depend>
-  <exec_depend>ur_controllers</exec_depend>
-  <exec_depend>ur_description</exec_depend>
-  <exec_depend>ur_moveit_config</exec_depend>
-  <exec_depend>ur_simulation_gz</exec_depend>
+  <exec_depend>tf_transformations</exec_depend>
   <exec_depend>urdf</exec_depend>
   <exec_depend>xacro</exec_depend>
+
+  <!-- Messages, services and action interfaces -->
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>moveit_msgs</exec_depend>
+  <exec_depend>rosiris_manipulation_interfaces</exec_depend>
+  <exec_depend>shape_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
