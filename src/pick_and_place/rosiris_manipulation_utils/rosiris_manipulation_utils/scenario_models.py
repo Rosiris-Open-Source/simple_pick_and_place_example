@@ -252,3 +252,6 @@ class Scenario(MsgClass):
 
     def __bool__(self) -> bool:
         return bool(self.metadata)
+    
+    def name(self) -> str:
+        return self.metadata.name

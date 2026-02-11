@@ -1,4 +1,4 @@
-# Copyright 2025 Manuel Muth
+# Copyright 2026 Manuel Muth
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@ from abc import ABC, abstractmethod
 from dataclasses import fields, is_dataclass
 from enum import IntEnum
 from packaging.version import Version
-from pathlib import Path
-from typing import override, Type, TypeVar, Any, Dict, Generic, ClassVar,Final
+from typing import override, Type, TypeVar, Any, Dict, Generic, ClassVar
 
 from rosiris_manipulation_utils.scenario_models import Scenario
 from rosiris_manipulation_utils.utilities import resolve_resource_path
@@ -27,16 +26,31 @@ class LoadScenarioError(Exception):
     """Raised when a scenario cannot be loaded or validated."""
     pass
 
+class NoSuitableLoaderError(ValueError):
+    """Raised when there is no Loader for the specified file type"""
+    pass
+
 class ScenarioLoader(ABC):
+    SUPPORTED_FILES: ClassVar[tuple[str, ...]]
+    
     @abstractmethod
-    def load_scenario(self, path: Path) -> Scenario:
+    def load_scenario(self, path: str) -> Scenario:
         pass
+
+    @property
+    @abstractmethod
+    def CURRENT_SCHEMA_VERSION(self) -> Version:
+        pass
+
+    @property
+    @abstractmethod
+    def MIN_SUPPORTED_VERSION(self) -> Version:
+        pass
+
 
 T = TypeVar("T")
 class YamlScenarioLoader(ScenarioLoader, Generic[T]):
-    ALLOWED_FILES: ClassVar[tuple[str, ...]] = (".yaml", ".yml", ".json")
-    CURRENT_SCHEMA_VERSION : Final[Version] = Version("1.0.0")
-    MIN_SUPPORTED_VERSION : Final[Version] = Version("1.0.0")
+    SUPPORTED_FILES: ClassVar[tuple[str, ...]] = (".yaml", ".yml", ".json")
 
     @override
     def load_scenario(self, path: str) -> Scenario:
@@ -50,11 +64,11 @@ class YamlScenarioLoader(ScenarioLoader, Generic[T]):
         """
 
         try:
-            resolved_path = resolve_resource_path(uri=path, file_types=".yaml")
+            resolved_path = resolve_resource_path(uri=path, file_types=self.SUPPORTED_FILES)
             with open(resolved_path, "r", encoding="utf-8") as f:
                 data : dict = yaml.safe_load(f)
         except FileNotFoundError as e:
-            raise LoadScenarioError(f"Resource:{path} not resolvable. {e}") from e
+            raise LoadScenarioError(f"Resource:{path} not resolvable.") from e
         except UnicodeDecodeError as e:
             raise LoadScenarioError(f"File is not valid UTF-8 text: {path}.{e}") from e
         except ValueError as e:
@@ -66,6 +80,16 @@ class YamlScenarioLoader(ScenarioLoader, Generic[T]):
 
         return self._parse_yaml_recursive(Scenario, data)
    
+    @property
+    @override
+    def CURRENT_SCHEMA_VERSION(self) -> Version:
+        return Version("1.0.0")
+
+    @property
+    @override
+    def MIN_SUPPORTED_VERSION(self) -> Version:
+        return Version("1.0.0")
+
 
     def _parse_yaml_recursive(self, cls: Type[T], data: Dict[str, Any]) -> T:
         """
@@ -127,3 +151,8 @@ class YamlScenarioLoader(ScenarioLoader, Generic[T]):
         if version > self.CURRENT_SCHEMA_VERSION:
             return False
         return True
+    
+
+LOADER_REGISTRY: tuple[type[ScenarioLoader], ...] = (
+    YamlScenarioLoader,
+)

@@ -14,13 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-
 from typing import Any
 
 import rclpy
 
-from tf_transformations import quaternion_from_euler
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
@@ -28,10 +25,7 @@ from rclpy.client import Client
 from rclpy.task import Future
 from rclpy.parameter import Parameter
 from rclpy.executors import ExternalShutdownException
-from geometry_msgs.msg import PoseStamped
-from moveit_msgs.msg import CollisionObject
 from rcl_interfaces.msg import ParameterDescriptor, IntegerRange
-from shape_msgs.msg import SolidPrimitive
 from std_srvs.srv import Trigger, Trigger_Request, Trigger_Response
 
 from rosiris_manipulation_interfaces.srv import (
@@ -44,30 +38,38 @@ from rosiris_manipulation_interfaces.srv import (
     UpdateAllowedCollisions,
 )
 from rosiris_manipulation_interfaces.msg import (
-    CollisionEntry,
-    CollisionMatrixUpdate,
-    CollisionObjectPoseUpdate,
     ServiceErrorCode,
     ServiceResult,
 )
 
-from rosiris_manipulation_utils.scenario_loader import ScenarioLoader, YamlScenarioLoader, LoadScenarioError
-from rosiris_manipulation_utils.scenario_models import Scenario
+from rosiris_manipulation_utils.scenario_loader import LoadScenarioError
+from rosiris_manipulation_utils.scenario_instance import ScenarioInstance
+from rosiris_manipulation_utils.scenario_loader import NoSuitableLoaderError
 
 class ScenarioManager(Node):
     SCENARIO_NAME="Tower of Hanoi"
 
-    def __init__(self):
-        super().__init__("scenario_manager")
+    def __init__(self, node_name: str = "scenario_manager"):
+        super().__init__(node_name)
         self.pass_through_cbg = ReentrantCallbackGroup()
-        self.scenario_loader: ScenarioLoader = YamlScenarioLoader()
+        self._scenario : ScenarioInstance| None = None
+
         self._declare_and_get_parameters()
         if not self._initialize_services_clients(self.wait_for_services_timeout):
             self.get_logger().error("Timeout while waiting for service")
             exit(-1)
 
         self._initialize_service_servers()
-        self._scenario_loaded = False
+        # load a initial scenario it one is passed via params
+        if self._initial_scenario_path:
+            resp = self._load_scenario(self._initial_scenario_path)
+            if resp.result.return_type == ServiceResult.SUCCESS and  self._scenario is not None:
+                self.get_logger().info(f"Successfully loaded scenario: {self._scenario.name}")
+            else:
+                self.get_logger().warning(f"Could not load initial scenario at: {self._initial_scenario_path}")
+                self.get_logger().warning(f"Got response: {resp.result.return_type}, with {resp.result.error_code}.")
+                self.get_logger().warning(f"Error Message: {resp.result.message}")
+
 
     def _declare_and_get_parameters(self):
         wait_for_services_timeout_desrc = ParameterDescriptor(
@@ -86,6 +88,13 @@ class ScenarioManager(Node):
             None if (v := self.declare_parameter('wait_for_services_timeout', -1, wait_for_services_timeout_desrc).value) < 0 else v
         )
         self.get_logger().info(f"wait_for_services_timeout = {self.wait_for_services_timeout}")
+        path_to_scenario_descr = ParameterDescriptor(
+            description='Path to the scenario which should be loaded on startup.',
+            type=Parameter.Type.STRING,
+        )
+        # Only None is defined as wait forever in wait_for_service...
+        self._initial_scenario_path: str = self.declare_parameter('path_to_scenario', "", path_to_scenario_descr).value
+        self.get_logger().info(f"initial_scenario_path = {self._initial_scenario_path}")
 
 
     def _initialize_services_clients(self, service_wait_timeout: int| None = None) -> bool:
@@ -108,7 +117,7 @@ class ScenarioManager(Node):
         ]:
             self.get_logger().info(f"Waiting for {cli.service_name} to become ready.")
             if not cli.wait_for_service(service_wait_timeout):
-                self.get_logger().warn(f"Timeout reached while waiting for {cli.service_name}")
+                self.get_logger().warning(f"Timeout reached while waiting for {cli.service_name}")
                 return False
             self.get_logger().info(f"{cli.service_name} ready.")
             
@@ -124,39 +133,51 @@ class ScenarioManager(Node):
         if not scenario_path or not scenario_path.strip():
             resp.result = self._srv_res(f"No path provided.", ServiceResult.ERROR, ServiceErrorCode.ERROR_VALUE)
             return resp
+        return self._load_scenario(scenario_path)
 
+    
+    def _load_scenario(self, path_to_scenario: str) -> LoadScenario.Response:
+        resp = LoadScenario.Response()
         try:
-            scenario = self.scenario_loader.load_scenario(scenario_path)
+            self._scenario = ScenarioInstance(path_to_scenario)
         except LoadScenarioError as e:
-            msg = f"Loading of the scenario {scenario_path} failed: {e}"
+            msg = f"Loading of the scenario {path_to_scenario} failed: {e}"
+            self.get_logger().error(msg)
+            resp.result = self._srv_res(msg, ServiceResult.ERROR, ServiceErrorCode.ERROR_VALUE)
+            return resp
+        except NoSuitableLoaderError as e:
+            msg = f"No loader found for file {path_to_scenario}: {e}"
             self.get_logger().error(msg)
             resp.result = self._srv_res(msg, ServiceResult.ERROR, ServiceErrorCode.ERROR_VALUE)
             return resp
         
-        self.get_logger().info(f"Loading scenario: {scenario.metadata.name}")
-        objs_to_add, col_mtrx_upds = scenario.to_msg()
+        self.get_logger().info(f"Loading scenario into scene: {self._scenario.name}")
+        objs_to_add, col_mtrx_upds = self._scenario.to_msg()
         # add collision obj from scenario:
         add_obj_req = AddCollisionObjects.Request()
         add_obj_req.collision_objects = objs_to_add
-        response = self._call_and_wait(self.add_cli, add_obj_req)
-
-        if response is None:
+        add_cli_resp : AddCollisionObjects.Response | None = self._call_and_wait(self.add_cli, add_obj_req)
+        
+        if add_cli_resp is None:
             resp.result = self._srv_res(f"No response from service {self.add_cli}", ServiceResult.ERROR, ServiceErrorCode.ERROR)
             return resp
-        
-        result = response.result
-        if result.return_type != ServiceResult.SUCCESS:
-            resp.result = self._srv_res(f"Failed to load scenario: {resp.result.message}", resp.result.return_type, resp.result.error_code)
+        if add_cli_resp.result.return_type != ServiceResult.SUCCESS:
+            resp.result = self._srv_res(f"Failed to load scenario: {add_cli_resp.result.message}", add_cli_resp.result.return_type, add_cli_resp.result.error_code)
             return resp
-        
-        self._scenario_loaded = True
+ 
+        self._scenario.loaded_in_scene = True
         success_msg = f"Successful setup up the {self.SCENARIO_NAME} scenario."
         self.get_logger().info(success_msg)
         resp.result = self._srv_res(success_msg, ServiceResult.SUCCESS, ServiceErrorCode.NO_ERROR)
         return resp
 
-    def _reset_scenario_cb(self, _: Trigger_Request, _res: Trigger_Response):
-        return _res
+
+    def _reset_scenario_cb(self, _: Trigger_Request, resp: Trigger_Response):
+        err_msg = "Resetting of scenario not implemented"
+        self.get_logger().warning(err_msg)
+        resp.message = err_msg
+        resp.success = False
+        return resp
 
     def _call_and_wait(self, client: Client, request) -> Any | None:
         future : Future = client.call_async(request)
