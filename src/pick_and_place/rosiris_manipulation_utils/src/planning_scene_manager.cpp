@@ -98,10 +98,6 @@ bool PlanningSceneManager::initialize()
   // Explicitly synchronize once to get current state
   planning_scene_monitor_->requestPlanningSceneState();
 
-  // Start publishing the planning scene
-  planning_scene_monitor_->startPublishingPlanningScene(
-    planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
-
   return true;
 }
 
@@ -114,7 +110,7 @@ PlanningSceneManager::applyCollisionMatrixUpdates(
 {
   std::vector<std::string> updated_links;
   std::vector<std::string> failed_links;
-
+  // Lock internal planning scene
   planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
   if (!scene)
   {
@@ -239,7 +235,7 @@ void PlanningSceneManager::initializeObjectsInACM(
   {
     return;
   }
-
+  // Lock internal planning scene
   planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
   if (!scene)
   {
@@ -265,10 +261,10 @@ void PlanningSceneManager::initializeObjectsInACM(
  * @brief Remove objects from ACM
  */
 std::vector<std::string> PlanningSceneManager::removeObjectsFromACM(
-  const std::vector<std::string> & object_ids)
+  const std::vector<std::string> & object_ids, moveit_msgs::msg::PlanningScene & update)
 {
   std::vector<std::string> removed;
-
+  // Lock internal planning scene
   planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
   if (!scene)
   {
@@ -288,6 +284,7 @@ std::vector<std::string> PlanningSceneManager::removeObjectsFromACM(
     }
   }
 
+  scene->getAllowedCollisionMatrix().getMessage(update.allowed_collision_matrix);
   return removed;
 }
 
@@ -332,7 +329,7 @@ void PlanningSceneManager::addCollisionObjects(
   std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> cmus;
   cmus.reserve(request->collision_objects.size());
 
-  {
+  {  // Lock internal planning scene
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
     if (!scene)
     {
@@ -361,7 +358,7 @@ void PlanningSceneManager::addCollisionObjects(
           get_logger(), "Failed to add collision object: %s", obj.collision_object.id.c_str());
       }
     }
-  }
+  }  // Released lock internal planning scene
 
   if (added_ids.empty())
   {
@@ -376,8 +373,13 @@ void PlanningSceneManager::addCollisionObjects(
 
   auto [acm_updated_links, acm_updated_failed_links] = applyCollisionMatrixUpdates(cmus);
 
-  planning_scene_monitor_->triggerSceneUpdateEvent(
-    planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+  auto result = triggerMoveGroupSceneUpdate(true);
+
+  if (result.return_type != rosiris_srv_result::SUCCESS)
+  {
+    response->result = result;
+    return;
+  }
 
   response->added_object_ids = added_ids;
   response->not_added_object_ids = not_added_ids;
@@ -387,6 +389,7 @@ void PlanningSceneManager::addCollisionObjects(
     response->result.error_code.error_code = rosiris_srv_error_codes::ERROR_ADDING_COLLISION_OBJECT;
     response->result.message =
       "Failed to add " + std::to_string(not_added_ids.size()) + " object(s)";
+    return;
   }
 
   if (!acm_updated_failed_links.empty())
@@ -407,10 +410,14 @@ void PlanningSceneManager::removeCollisionObjects(
   const std::shared_ptr<rosiris_manip_srv::RemoveCollisionObjects::Request> request,
   std::shared_ptr<rosiris_manip_srv::RemoveCollisionObjects::Response> response)
 {
+  // This is the message we will send to the Master move_group
+  moveit_msgs::msg::PlanningScene ps_diff;
+  ps_diff.is_diff = true;
+
   std::vector<std::string> removed_ids;
   std::vector<std::string> not_removed_ids;
 
-  {
+  {  // Lock internal planning scene
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
     if (!scene)
     {
@@ -421,55 +428,69 @@ void PlanningSceneManager::removeCollisionObjects(
       return;
     }
 
-    // Remove from planning scene
     for (const auto & object_id : request->object_ids)
     {
-      moveit_msgs::msg::CollisionObject obj;
-      obj.id = object_id;
-      obj.operation = moveit_msgs::msg::CollisionObject::REMOVE;
+      moveit_msgs::msg::CollisionObject remove_obj;
+      remove_obj.id = object_id;
+      remove_obj.operation = moveit_msgs::msg::CollisionObject::REMOVE;
 
-      if (scene->processCollisionObjectMsg(obj))
+      if (scene->processCollisionObjectMsg(remove_obj))
       {
         removed_ids.push_back(object_id);
-        RCLCPP_INFO(get_logger(), "Removed collision object: %s", object_id.c_str());
+        // Add this explicit REMOVE command to the diff we send to move_group
+        ps_diff.world.collision_objects.push_back(remove_obj);
+        RCLCPP_INFO(get_logger(), "Locally removed collision object: %s", object_id.c_str());
       }
       else
       {
         not_removed_ids.push_back(object_id);
-        RCLCPP_WARN(get_logger(), "Failed to remove collision object: %s", object_id.c_str());
+        RCLCPP_WARN(
+          get_logger(), "Failed to remove object (not found locally): %s", object_id.c_str());
       }
+    }
+  }  // Released lock internal planning scene
+
+  if (!removed_ids.empty())
+  {
+    // TODO(Manuel) check if all objects that are removed are successfully removed from acm
+    removeObjectsFromACM(removed_ids, ps_diff);
+  }
+
+  if (!removed_ids.empty())
+  {
+    auto result = triggerMoveGroupSceneUpdate(ps_diff);
+    if (result.return_type == rosiris_manip_msg::ServiceResult::SUCCESS)
+    {
+      RCLCPP_INFO(
+        get_logger(), "Successfully synced removal of %zu objects to Master", removed_ids.size());
+    }
+    else
+    {
+      response->result = result;
+      return;
     }
   }
 
-  // Remove from ACM
-  if (!removed_ids.empty())
-  {
-    auto acm_removed = removeObjectsFromACM(removed_ids);
-    RCLCPP_DEBUG(get_logger(), "Removed %zu object(s) from ACM", acm_removed.size());
-  }
-
-  // Trigger planning scene update
-  planning_scene_monitor_->triggerSceneUpdateEvent(
-    planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
-
   response->removed_object_ids = removed_ids;
   response->not_removed_object_ids = not_removed_ids;
-  response->result.return_type =
-    not_removed_ids.empty() ? rosiris_srv_result::SUCCESS : rosiris_srv_result::PARTIAL_SUCCESS;
-  response->result.error_code.error_code =
-    not_removed_ids.empty() ? rosiris_srv_error_codes::NO_ERROR
-                            : rosiris_srv_error_codes::ERROR_REMOVING_COLLISION_OBJECT;
-  response->result.message =
-    not_removed_ids.empty()
-      ? "All objects removed successfully"
-      : "Failed to remove " + std::to_string(not_removed_ids.size()) + " object(s)";
+
+  if (not_removed_ids.empty())
+  {
+    response->result.return_type = rosiris_srv_result::SUCCESS;
+    response->result.message = "All objects removed successfully";
+  }
+  else
+  {
+    response->result.return_type = rosiris_srv_result::PARTIAL_SUCCESS;
+    response->result.message = "Some objects were not found or could not be removed";
+  }
 }
 
 void PlanningSceneManager::attachCollisionObject(
   const std::shared_ptr<rosiris_manip_srv::AttachCollisionObject::Request> request,
   std::shared_ptr<rosiris_manip_srv::AttachCollisionObject::Response> response)
 {
-  {
+  {  // Lock internal planning scene
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
     if (!scene)
     {
@@ -517,11 +538,15 @@ void PlanningSceneManager::attachCollisionObject(
     RCLCPP_INFO(
       get_logger(), "Attached object %s to link %s", request->collision_object_id.c_str(),
       request->attach_to_link.c_str());
-  }
+  }  // Released lock internal planning scene
 
-  // Trigger planning scene update
-  planning_scene_monitor_->triggerSceneUpdateEvent(
-    planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+  auto result = triggerMoveGroupSceneUpdate(true);
+
+  if (result.return_type != rosiris_srv_result::SUCCESS)
+  {
+    response->result = result;
+    return;
+  }
 
   response->result.return_type = rosiris_srv_result::SUCCESS;
   response->result.error_code.error_code = rosiris_srv_error_codes::NO_ERROR;
@@ -532,7 +557,7 @@ void PlanningSceneManager::detachCollisionObject(
   const std::shared_ptr<rosiris_manip_srv::DetachCollisionObject::Request> request,
   std::shared_ptr<rosiris_manip_srv::DetachCollisionObject::Response> response)
 {
-  {
+  {  // Lock internal planning scene
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
     if (!scene)
     {
@@ -571,7 +596,7 @@ void PlanningSceneManager::detachCollisionObject(
     RCLCPP_INFO(
       get_logger(), "Detached object %s from link %s", request->collision_object_id.c_str(),
       request->detach_from_link.c_str());
-  }
+  }  // Released lock internal planning scene
 
   // Apply collision matrix update
   std::vector<rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate> cmus;
@@ -580,8 +605,13 @@ void PlanningSceneManager::detachCollisionObject(
     rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::MERGE, false));
   auto [acm_updated_links, acm_updated_failed_links] = applyCollisionMatrixUpdates(cmus);
 
-  planning_scene_monitor_->triggerSceneUpdateEvent(
-    planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+  auto result = triggerMoveGroupSceneUpdate(true);
+
+  if (result.return_type != rosiris_srv_result::SUCCESS)
+  {
+    response->result = result;
+    return;
+  }
 
   if (!acm_updated_failed_links.empty())
   {
@@ -611,7 +641,7 @@ void PlanningSceneManager::moveCollisionObjects(
   const std::shared_ptr<rosiris_manip_srv::MoveCollisionObjects::Request> request,
   std::shared_ptr<rosiris_manip_srv::MoveCollisionObjects::Response> response)
 {
-  {
+  {  // Lock internal planning scene
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_);
     if (!scene)
     {
@@ -651,7 +681,7 @@ void PlanningSceneManager::moveCollisionObjects(
         RCLCPP_WARN(get_logger(), "Failed to move object: %s", update.object_id.c_str());
       }
     }
-  }
+  }  // Released lock internal planning scene
 
   if (response->moved_object_ids.empty())
   {
@@ -677,8 +707,13 @@ void PlanningSceneManager::moveCollisionObjects(
   auto [acm_updated_links, acm_update_failed_links] =
     applyCollisionMatrixUpdates(moved_obj_acm_updates);
 
-  planning_scene_monitor_->triggerSceneUpdateEvent(
-    planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+  auto result = triggerMoveGroupSceneUpdate(true);
+
+  if (result.return_type != rosiris_srv_result::SUCCESS)
+  {
+    response->result = result;
+    return;
+  }
 
   if (!response->not_moved_object_ids.empty())
   {
@@ -719,9 +754,13 @@ void PlanningSceneManager::updateAllowedCollisions(
   auto [acm_updated_links, acm_update_failed_links] =
     applyCollisionMatrixUpdates(request->collision_matrix_updates);
 
-  // Trigger planning scene update
-  planning_scene_monitor_->triggerSceneUpdateEvent(
-    planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+  auto result = triggerMoveGroupSceneUpdate(true);
+
+  if (result.return_type != rosiris_srv_result::SUCCESS)
+  {
+    response->result = result;
+    return;
+  }
 
   response->updated_object_ids = acm_updated_links;
   response->not_updated_object_ids = acm_update_failed_links;
@@ -736,6 +775,46 @@ void PlanningSceneManager::updateAllowedCollisions(
     response->not_updated_object_ids.empty()
       ? "ACM updated successfully"
       : "Failed to update " + std::to_string(response->not_updated_object_ids.size()) + " link(s)";
+}
+
+rosiris_manip_msg::ServiceResult PlanningSceneManager::triggerMoveGroupSceneUpdate(bool is_diff)
+{
+  moveit_msgs::msg::PlanningScene update;
+  {
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
+    if (!scene)
+    {
+      rosiris_manip_msg::ServiceResult srv_result;
+      srv_result.return_type = rosiris_srv_result::ERROR;
+      srv_result.error_code.error_code = rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      srv_result.message = "Planning scene not available";
+      return srv_result;
+    }
+    scene->getPlanningSceneMsg(update);
+  }
+  update.is_diff = is_diff;
+
+  return triggerMoveGroupSceneUpdate(update);
+}
+
+rosiris_manipulation_interfaces::msg::ServiceResult
+PlanningSceneManager::triggerMoveGroupSceneUpdate(moveit_msgs::msg::PlanningScene update)
+{
+  if (!planning_scene_interface_.applyPlanningScene(update))
+  {
+    rosiris_manip_msg::ServiceResult srv_result;
+    srv_result.return_type = rosiris_srv_result::ERROR;
+    srv_result.error_code.error_code =
+      rosiris_srv_error_codes::ERROR_MOVE_GROUP_PLANNING_SCENE_UPDATE;
+    srv_result.message = "Could not apply the received updates to the move_groups planning_scene";
+    return srv_result;
+  }
+  rosiris_manip_msg::ServiceResult srv_result;
+  srv_result.return_type = rosiris_srv_result::SUCCESS;
+  srv_result.error_code.error_code = rosiris_srv_error_codes::NO_ERROR;
+  srv_result.message =
+    "Successfully applied the received updates to the move_groups planning_scene";
+  return srv_result;
 }
 
 rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate

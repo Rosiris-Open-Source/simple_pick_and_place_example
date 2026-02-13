@@ -20,9 +20,21 @@ ros2 service call \
         dimensions: [0.2, 0.2, 0.2]
     primitive_poses:
       - position:
-          x: 0.5
-          y: 0.0
+          x: -1.5
+          y: -1.5
           z: 0.1
+        orientation:
+          x: 0.0
+          y: 0.0
+          z: 0.0
+          w: 1.0
+    subframe_names:
+      - 'grasp_point'
+    subframe_poses:
+      - position:
+          x: -0.5
+          y: -0.5
+          z: -0.5
         orientation:
           x: 0.0
           y: 0.0

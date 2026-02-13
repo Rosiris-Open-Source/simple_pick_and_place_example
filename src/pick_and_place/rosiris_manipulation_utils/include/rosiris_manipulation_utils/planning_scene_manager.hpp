@@ -24,6 +24,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 
+#include <moveit/planning_scene_interface/planning_scene_interface.hpp>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.hpp>
 #include <moveit_msgs/msg/collision_object.hpp>
 #include <moveit_msgs/msg/planning_scene.hpp>
@@ -80,7 +81,8 @@ private:
   /**
    * @brief Remove objects from ACM
    */
-  std::vector<std::string> removeObjectsFromACM(const std::vector<std::string> & object_ids);
+  std::vector<std::string> removeObjectsFromACM(
+    const std::vector<std::string> & object_ids, moveit_msgs::msg::PlanningScene & update);
 
   /**
    * @brief Validate objects exist in planning scene
@@ -128,7 +130,12 @@ private:
     std::shared_ptr<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions::Response>
       response);
 
+  rosiris_manipulation_interfaces::msg::ServiceResult triggerMoveGroupSceneUpdate(bool is_diff);
+  rosiris_manipulation_interfaces::msg::ServiceResult triggerMoveGroupSceneUpdate(
+    moveit_msgs::msg::PlanningScene update);
+
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+  moveit::planning_interface::PlanningSceneInterface planning_scene_interface_;
 
   rclcpp::Service<rosiris_manipulation_interfaces::srv::AddCollisionObjects>::SharedPtr
     add_collision_objects_srv_;

@@ -13,6 +13,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   moveit_core
   moveit_msgs
   moveit_ros_planning
+  moveit_ros_planning_interface
   rclcpp
   rosiris_manipulation_interfaces
   shape_msgs
