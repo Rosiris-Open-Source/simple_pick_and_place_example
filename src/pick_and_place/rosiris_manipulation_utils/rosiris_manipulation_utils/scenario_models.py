@@ -144,6 +144,10 @@ class Subframe(MsgClass):
     name: str
     pose: Pose = field(default_factory=Pose)
 
+    @override
+    def to_msg(self) -> tuple[str, PoseMsg]:
+        pose_msg = self.pose.to_msg()
+        return self.name,pose_msg
 
 @dataclass
 class CollisionObject(MsgClass):
@@ -195,8 +199,10 @@ class CollisionObject(MsgClass):
 
         # Subframes
         for sub in self.subframes:
-            msg.subframe_names.append(sub.name or "")
-            msg.subframe_poses.append(sub.pose.to_msg())
+            name, pose_msg = sub.to_msg()
+            if name:
+                msg.subframe_names.append(name or "")
+                msg.subframe_poses.append(pose_msg)
 
         return msg
 
