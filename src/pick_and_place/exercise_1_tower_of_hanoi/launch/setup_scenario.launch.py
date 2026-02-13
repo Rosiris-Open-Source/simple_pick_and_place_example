@@ -10,8 +10,7 @@ def generate_launch_description():
             output="screen",
             parameters=[
                 {
-                    "wait_for_services_timeout": 10,
-                    "path_to_scenario": "package://exercise_1_tower_of_hanoi/description/scenario.yaml"
+                    "path_to_scenario": "package://exercise_1_tower_of_hanoi/description/tower_of_hanoi_scenario.yaml"
                 }
             ],                                         
         )

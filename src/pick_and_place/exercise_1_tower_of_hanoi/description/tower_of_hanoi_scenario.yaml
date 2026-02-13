@@ -14,6 +14,9 @@ collision_objects:
     primitives:
       - type: BOX
         dimensions: [0.06, 0.06, 0.06]
+    subframes:
+      - name: "grasp_point"                  
+        pose: { position: {x: 0.5, y: 0.5, z: 0.0}}   
     allowed_touch_links : ["desk_1_link"]
   - id: "cube_2"
     header:
