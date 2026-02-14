@@ -107,23 +107,22 @@ class YamlScenarioLoader(ScenarioLoader, Generic[T]):
 
             # Handle enums
             if isinstance(f.type, type) and issubclass(f.type, IntEnum):
-                init_kwargs[f.name] = f.type[value]
-            # List of enums
+                init_kwargs[f.name] = self._normalize_enum_input(f.type, value)
+            # Lists
             elif getattr(f.type, "__origin__", None) is list:
                 inner_type = f.type.__args__[0]
-                if is_dataclass(inner_type):
+                if not isinstance(value, list):
+                    # Robustness: wrap single item if user inputs
+                    # value instead of [value] we fallback to list
+                    value = [value] 
+
+                if is_dataclass(inner_type): # list if dataclass
                     init_kwargs[f.name] = [self._parse_yaml_recursive(inner_type, v) for v in value]
-                elif isinstance(inner_type, type) and issubclass(inner_type, IntEnum):
-                    init_kwargs[f.name] = [inner_type[v] for v in value]
-                else:
+                elif isinstance(inner_type, type) and issubclass(inner_type, IntEnum): # list of enums
+                    init_kwargs[f.name] = [self._normalize_enum_input(inner_type, v) for v in value]
+                else: # list of primitives
                     init_kwargs[f.name] = value
-            # Handle lists of dataclasses
-            elif getattr(f.type, "__origin__", None) is list:
-                inner_type = f.type.__args__[0]
-                if is_dataclass(inner_type):
-                    init_kwargs[f.name] = [self._parse_yaml_recursive(inner_type, v) for v in value]
-                else:
-                    init_kwargs[f.name] = value
+
             # Handle nested dataclasses
             elif is_dataclass(f.type):
                 init_kwargs[f.name] = self._parse_yaml_recursive(f.type, value)
@@ -131,6 +130,20 @@ class YamlScenarioLoader(ScenarioLoader, Generic[T]):
                 init_kwargs[f.name] = value
 
         return cls(**init_kwargs)
+    
+    def _normalize_enum_input(self, enum_cls: Type[IntEnum], value: Any) -> IntEnum:  
+        if isinstance(value, str):
+            # normalize fuzzy input like "value" or " Value" or, ...
+            # to VALUE
+            normalized = value.strip().upper()
+            try:
+                return enum_cls[normalized]
+            except KeyError:
+                valid = [e.name for e in enum_cls]
+                raise ValueError(f"Invalid string '{value}' for {enum_cls.__name__}. Expected {valid}")
+        else:
+            # Handle raw integers
+            return enum_cls(value)
     
     def _check_schema_version_is_supported(self, data: dict) -> None:
         metadata = data.get("metadata")
