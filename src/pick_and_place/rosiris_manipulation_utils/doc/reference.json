@@ -17,6 +17,10 @@
     "MERGE": 1,
     "REMOVE": 2
   },
+  "rotation_unit": {
+      "DEG": 0,
+      "RAD": 1
+  },
   "data_types": {
     "metadata": {
       "schema_version": "string",
@@ -41,7 +45,8 @@
     "orientation_rpy": {
       "r": "float",
       "p": "float",
-      "y": "float"
+      "y": "float",
+      "unit": "rotation_unit"
     },
     "pose": {
       "position": "position",

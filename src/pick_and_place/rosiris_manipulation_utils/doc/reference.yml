@@ -20,6 +20,10 @@ cmu_mode:
   MERGE: 1
   REMOVE: 2
 
+rotation_unit:
+  DEG: 0
+  RAD: 1
+
 # Data Types
 metadata:
   schema_version: string          # Required, format: "X.Y.Z" (semver)
@@ -45,6 +49,7 @@ orientation_rpy:
   r: float                        # Roll, optional, default: 0.0
   p: float                        # Pitch, optional, default: 0.0
   y: float                        # Yaw, optional, default: 0.0
+  unit: rotation_unit             # (DEG | RAD), default DEG 
 
 pose:
   position: position              # Optional, default: {x: 0.0, y: 0.0, z: 0.0}

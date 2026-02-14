@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, override
 from enum import IntEnum
+import math
 from packaging.version import Version, InvalidVersion
 from tf_transformations import quaternion_from_euler
 
@@ -44,7 +45,9 @@ class CMUMode(IntEnum):
     MERGE = 1
     REMOVE = 2
 
-
+class RotationUnit(IntEnum):
+    DEG = 0
+    RAD = 1
 @dataclass
 class Metadata:
     schema_version: str
@@ -77,10 +80,17 @@ class OrientationRPY(MsgClass):
     r: float = 0.0
     p: float = 0.0
     y: float = 0.0
+    unit: RotationUnit = RotationUnit.DEG
 
     @override
     def to_msg(self) -> QuaternionMsg:
-        qx, qy, qz, qw = quaternion_from_euler(self.r, self.p, self.y)
+        if self.unit == RotationUnit.DEG:
+            r_rad = math.radians(self.r)
+            p_rad = math.radians(self.p)
+            y_rad = math.radians(self.y)
+            qx, qy, qz, qw = quaternion_from_euler(r_rad, p_rad, y_rad)
+        else:
+            qx, qy, qz, qw = quaternion_from_euler(self.r, self.p, self.y)
         return QuaternionMsg(x=qx, y=qy, z=qz, w=qw)
 
 
