@@ -5,7 +5,7 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_directory
-from moveit_configs_utils import MoveItConfigsBuilder
+from moveit_configs_utils import MoveItConfigsBuilder, MoveItConfigs
 
 
 def generate_launch_description():
@@ -19,7 +19,7 @@ def generate_launch_description():
     }
 
     # Load the robot configuration
-    moveit_config = (
+    moveit_config : MoveItConfigs = (
         MoveItConfigsBuilder(
             "tower_of_hanoi", package_name="exercise_1_tower_of_hanoi"
         )
