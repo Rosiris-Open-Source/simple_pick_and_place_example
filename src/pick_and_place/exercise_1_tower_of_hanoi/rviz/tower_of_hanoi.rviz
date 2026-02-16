@@ -7,7 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
       Splitter Ratio: 0.5
-    Tree Height: 289
+    Tree Height: 367
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -78,12 +78,33 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          desk_{number}_link:
+          desk_1_cuboid_mount_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          desk_{number}_tabletop_link:
+          desk_1_cuboid_mount_middle_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          desk_1_place_location_left:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_place_location_middle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_place_location_right:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_tabletop_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -215,12 +236,33 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          desk_{number}_link:
+          desk_1_cuboid_mount_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          desk_{number}_tabletop_link:
+          desk_1_cuboid_mount_middle_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          desk_1_place_location_left:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_place_location_middle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_place_location_right:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_tabletop_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -363,12 +405,33 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          desk_{number}_link:
+          desk_1_cuboid_mount_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          desk_{number}_tabletop_link:
+          desk_1_cuboid_mount_middle_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          desk_1_place_location_left:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_place_location_middle:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_place_location_right:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+          desk_1_tabletop_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -471,9 +534,19 @@ Visualization Manager:
           Value: true
         bracelet_link:
           Value: true
-        desk_{number}_link:
+        desk_1_cuboid_mount_link:
           Value: true
-        desk_{number}_tabletop_link:
+        desk_1_cuboid_mount_middle_link:
+          Value: true
+        desk_1_link:
+          Value: true
+        desk_1_place_location_left:
+          Value: true
+        desk_1_place_location_middle:
+          Value: true
+        desk_1_place_location_right:
+          Value: true
+        desk_1_tabletop_link:
           Value: true
         end_effector_link:
           Value: true
@@ -516,31 +589,38 @@ Visualization Manager:
       Show Names: false
       Tree:
         world:
-          base_link:
-            shoulder_link:
-              half_arm_1_link:
-                half_arm_2_link:
-                  forearm_link:
-                    spherical_wrist_1_link:
-                      spherical_wrist_2_link:
-                        bracelet_link:
-                          end_effector_link:
-                            robotiq_85_base_link:
-                              robotiq_85_left_inner_knuckle_link:
-                                {}
-                              robotiq_85_left_knuckle_link:
-                                robotiq_85_left_finger_link:
-                                  robotiq_85_left_finger_tip_link:
-                                    {}
-                              robotiq_85_right_inner_knuckle_link:
-                                {}
-                              robotiq_85_right_knuckle_link:
-                                robotiq_85_right_finger_link:
-                                  robotiq_85_right_finger_tip_link:
-                                    {}
-          desk_{number}_link:
-            desk_{number}_tabletop_link:
-              {}
+          desk_1_link:
+            desk_1_tabletop_link:
+              desk_1_cuboid_mount_link:
+                desk_1_cuboid_mount_middle_link:
+                  base_link:
+                    shoulder_link:
+                      half_arm_1_link:
+                        half_arm_2_link:
+                          forearm_link:
+                            spherical_wrist_1_link:
+                              spherical_wrist_2_link:
+                                bracelet_link:
+                                  end_effector_link:
+                                    robotiq_85_base_link:
+                                      robotiq_85_left_inner_knuckle_link:
+                                        {}
+                                      robotiq_85_left_knuckle_link:
+                                        robotiq_85_left_finger_link:
+                                          robotiq_85_left_finger_tip_link:
+                                            {}
+                                      robotiq_85_right_inner_knuckle_link:
+                                        {}
+                                      robotiq_85_right_knuckle_link:
+                                        robotiq_85_right_finger_link:
+                                          robotiq_85_right_finger_tip_link:
+                                            {}
+              desk_1_place_location_left:
+                {}
+              desk_1_place_location_middle:
+                {}
+              desk_1_place_location_right:
+                {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -589,37 +669,37 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.142622232437134
+      Distance: 3.7760322093963623
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.9624882936477661
-        Y: 1.2415406703948975
-        Z: -0.6709775924682617
+        X: 1.259984016418457
+        Y: 1.8348995447158813
+        Z: 0.8460460901260376
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.360397458076477
+      Pitch: 0.7903980612754822
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.8635759353637695
+      Yaw: 5.483582973480225
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1032
+  Height: 1572
   Hide Left Dock: false
   Hide Right Dock: false
   MotionPlanning:
     collapsed: false
   MotionPlanning - Trajectory Slider:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001c90000036efc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b000001aa000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000003f00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e006701000001eb000001be0000016900ffffff000000010000010f0000036efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b0000036e000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000007800000003efc0100000002fb0000000800540069006d00650100000000000007800000025300fffffffb0000000800540069006d006501000000000000045000000000000000000000049c0000036e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001c900000591fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b000001f8000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000280020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000000000000000fb00000044004d006f00740069006f006e0050006c0061006e006e0069006e00670020002d0020005400720061006a006500630074006f0072007900200053006c00690064006500720000000000ffffffff0000003f00fffffffb0000001c004d006f00740069006f006e0050006c0061006e006e0069006e00670100000239000003930000016900ffffff000000010000010f00000591fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b00000591000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e1000001970000000300000a0000000037fc0100000002fb0000000800540069006d0065010000000000000a000000025300fffffffb0000000800540069006d006501000000000000045000000000000000000000071c0000059100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -628,6 +708,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1920
-  X: 2560
+  Width: 2560
+  X: 0
   Y: 0
