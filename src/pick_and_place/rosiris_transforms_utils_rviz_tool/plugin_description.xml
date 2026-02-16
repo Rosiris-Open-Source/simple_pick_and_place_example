@@ -1,0 +1,9 @@
+<library path="rosiris_transforms_utils_rviz_tool">
+  <class name="rosiris_transforms_utils_rviz_tool/HelloWorldPanel"
+         type="rosiris_transforms_utils_rviz_tool::HelloWorldPanel"
+         base_class_type="rviz_common::Panel">
+    <description>
+      A simple panel that displays Hello World in the 3D scene.
+    </description>
+  </class>
+</library>
