@@ -1,0 +1,124 @@
+<launch>
+  <!-- Launch arguments -->
+  <arg name="use_fake_hardware" default="true" description="Use fake hardware"/>
+  <arg name="gripper" default="robotiq_2f_85" description="Gripper type"/>
+  <arg name="dof" default="7" description="Degrees of freedom"/>
+  <arg name="use_sim_time" default="false" description="Use simulation time"/>
+  <arg name="rviz_config" default="tower_of_hanoi.rviz" description="RViz configuration file"/>
+
+  <!-- File paths -->
+  <arg name="description_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/description/tower_of_hanoi.urdf.xacro"
+       description="URDF/XACRO description file"/>
+  <arg name="semantic_description_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/tower_of_hanoi.srdf"
+       description="SRDF semantic description file"/>
+  <arg name="ros2_controllers_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/ros2_controllers.yaml"
+       description="ROS2 controllers configuration"/>
+
+  <arg name="joint_limits_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/joint_limits.yaml"
+       description="Joint limits configuration"/>
+  <arg name="kinematics_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/kinematics.yaml"
+       description="Kinematics configuration"/>
+  <arg name="move_group_config_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/move_group_config.yaml"
+       description="Move group configuration file"/>
+  <arg name="moveit_controllers_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/moveit_controllers.yaml"
+       description="MoveIt controllers configuration"/>
+  <arg name="ompl_planning_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/ompl_planning.yaml"
+       description="OMPL planning configuration"/>
+   <arg name="pilz_cartesian_limits_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/pilz_cartesian_limits.yaml"
+       description="Limits for the PILZ planner"/>
+  <arg name="pilz_planning_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/pilz_planning.yaml"
+       description="PILZ planning configuration"/>
+
+  <arg name="rviz_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/rviz/$(var rviz_config)"
+       description="RViz configuration file path"/>
+
+
+  <!-- Load robot description -->
+  <let name="robot_description_content"
+       value="$(command '$(find-exec xacro) $(var description_file_path) \
+                use_fake_hardware:=$(var use_fake_hardware) \
+                gripper:=$(var gripper) \
+                dof:=$(var dof)')"/>
+
+  <!-- Robot State Publisher -->
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="both">
+    <param name="robot_description" value="$(var robot_description_content)"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+  <node pkg="tf2_ros"
+        exec="static_transform_publisher"
+        name="static_transform_publisher"
+        output="log"
+        args="0 0 0 0 0 0 world base_link"/>
+
+  <!-- ROS2 Control Node -->
+  <node pkg="controller_manager" exec="ros2_control_node" output="both">
+    <param from="$(var ros2_controllers_file_path)"/>
+    <remap from="/controller_manager/robot_description" to="/robot_description"/>
+  </node>
+
+  <!-- Joint State Broadcaster -->
+  <node pkg="controller_manager" exec="spawner" args="joint_state_broadcaster --controller-manager /controller_manager">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+  <!-- Arm Controller -->
+  <node pkg="controller_manager" exec="spawner" args="joint_trajectory_controller -c /controller_manager">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+  <!-- Gripper Controller -->
+  <node pkg="controller_manager" exec="spawner" args="robotiq_gripper_controller -c /controller_manager">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+  <!-- Load MoveIt Configuration -->
+  <let name="robot_srdf_content"
+    value="$(command '$(find-exec xacro) $(var semantic_description_file_path)')"/>
+
+  <!-- MoveIt move_group Node -->
+  <node pkg="moveit_ros_move_group" exec="move_group" output="screen">
+    <param name="robot_description" value="$(var robot_description_content)"/>
+    <param name="robot_description_semantic" value="$(var robot_srdf_content)"/>
+    <param from="$(var joint_limits_file_path)"/>
+    <param from="$(var kinematics_file_path)"/>
+    <param from="$(var move_group_config_file_path)"/>
+    <param from="$(var moveit_controllers_file_path)"/>
+    <param from="$(var ompl_planning_file_path)"/>
+    <param from="$(var pilz_cartesian_limits_file_path)"/>
+    <param from="$(var pilz_planning_file_path)"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+  <!-- RViz2 -->
+  <node pkg="rviz2" exec="rviz2" name="rviz2" output="log" args="-d $(var rviz_file_path)">
+    <param name="robot_description" value="$(var robot_description_content)"/>
+    <param name="robot_description_semantic" value="$(var robot_srdf_content)"/>
+    <param from="$(var joint_limits_file_path)"/>
+    <param from="$(var kinematics_file_path)"/>
+    <param from="$(var move_group_config_file_path)"/>
+    <param from="$(var moveit_controllers_file_path)"/>
+    <param from="$(var ompl_planning_file_path)"/>
+    <param from="$(var pilz_cartesian_limits_file_path)"/>
+    <param from="$(var pilz_planning_file_path)"/>
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+  <!-- Planning Scene Manager -->
+  <node pkg="rosiris_manipulation_utils" exec="planning_scene_manager_node" name="planning_scene_manager" output="screen">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+  </node>
+
+</launch>
