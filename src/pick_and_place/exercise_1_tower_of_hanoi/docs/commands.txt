@@ -1,0 +1,4 @@
+ros2 param get /move_group capabilities
+ros2 param set /move_group capabilities "move_group/TfPublisher"
+ros2 run tf2_ros tf2_echo world box/grasp_point
+ros2 topic echo /monitored_planning_scene 
