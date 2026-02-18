@@ -6,10 +6,23 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rviz_common REQUIRED)
-find_package(visualization_msgs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
+set(THIS_PACKAGE_ROS_DEPENDENCIES
+  geometry_msgs
+  interactive_markers
+  pluginlib
+  rclcpp
+  rviz_common
+  tf2_geometry_msgs
+  tf2_ros
+  tf2
+  visualization_msgs
+)
+
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_ROS_DEPENDENCIES})
+  find_package(${Dependency} REQUIRED)
+endforeach()
+
 set(CMAKE_AUTOMOC ON)
 
 set(plugin_headers
@@ -27,7 +40,14 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME}
+  interactive_markers::interactive_markers
+  pluginlib::pluginlib
+  rclcpp::rclcpp
   rviz_common::rviz_common
+  tf2_ros::tf2_ros
+  tf2::tf2
+  ${geometry_msgs_TARGETS}
+  ${tf2_geometry_msgs_TARGETS}
   ${visualization_msgs_TARGETS}
   Qt5::Widgets
 )

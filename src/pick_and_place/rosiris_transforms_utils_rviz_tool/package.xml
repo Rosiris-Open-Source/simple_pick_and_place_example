@@ -10,11 +10,15 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>geometry_msgs</depend>
+  <depend>interactive_markers</depend>
   <depend>libqt5-widgets</depend>
   <depend>pluginlib</depend>
   <depend>qtbase5-dev</depend>
   <depend>rclcpp</depend>
   <depend>rviz_common</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2</depend>
   <depend>visualization_msgs</depend>
 
   <export>
