@@ -16,7 +16,7 @@ collision_objects:
         dimensions: [0.06, 0.06, 0.06]
     subframes:
       - name: "grasp_point"                  
-        pose: { position: {x: 0.5, y: 0.5, z: 0.0}}   
+        pose: { position: {x: -0.05, z: 0.03}, orientation: {r: 90, y: 90}}   
     allowed_touch_links : ["desk_1_link"]
   - id: "cube_2"
     header:
@@ -25,6 +25,9 @@ collision_objects:
     primitives:
       - type: BOX
         dimensions: [0.05, 0.05, 0.05]
+    subframes:
+      - name: "grasp_point"                  
+        pose: { position: {x: -0.045, z: 0.025}, orientation: {r: 90, y: 90}}  
     allowed_touch_links : ["cube_1"]
   - id: "cube_3"
     header:
@@ -33,4 +36,7 @@ collision_objects:
     primitives:
       - type: BOX
         dimensions: [0.04, 0.04, 0.04]
+    subframes:
+      - name: "grasp_point"                  
+        pose: { position: {x: -0.04, z: 0.02}, orientation: {r: 90, y: 90}}  
     allowed_touch_links : ["cube_2"]
