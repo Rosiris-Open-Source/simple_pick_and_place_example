@@ -7,3 +7,5 @@ ros2 topic echo /monitored_planning_scene
 scenario:
 ros2 launch exercise_1_tower_of_hanoi tower_of_hanoi.launch.xml
 ros2 launch exercise_1_tower_of_hanoi setup_scenario.launch.py
+
+ros2 action send_goal /robotiq_gripper_controller/gripper_cmd control_msgs/action/ParallelGripperCommand '{ command: { name: ["robotiq_85_left_knuckle_joint/position"], position: [0.4], effort: [0.1]}}'
