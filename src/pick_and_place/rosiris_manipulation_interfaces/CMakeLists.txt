@@ -33,6 +33,7 @@ set(srv_files
   srv/LoadScenario.srv
   srv/MoveCollisionObjects.srv
   srv/RemoveCollisionObjects.srv
+  srv/ResetScenario.srv
   srv/UpdateAllowedCollisions.srv
 )
 

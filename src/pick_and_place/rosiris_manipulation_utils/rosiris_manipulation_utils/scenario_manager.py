@@ -26,7 +26,6 @@ from rclpy.task import Future
 from rclpy.parameter import Parameter
 from rclpy.executors import ExternalShutdownException
 from rcl_interfaces.msg import ParameterDescriptor, IntegerRange
-from std_srvs.srv import Trigger, Trigger_Request, Trigger_Response
 
 from rosiris_manipulation_interfaces.srv import (
     AddCollisionObjects,
@@ -35,6 +34,7 @@ from rosiris_manipulation_interfaces.srv import (
     LoadScenario,
     MoveCollisionObjects,
     RemoveCollisionObjects,
+    ResetScenario,
     UpdateAllowedCollisions,
 )
 from rosiris_manipulation_interfaces.msg import (
@@ -47,7 +47,6 @@ from rosiris_manipulation_utils.scenario_instance import ScenarioInstance
 from rosiris_manipulation_utils.scenario_loader import NoSuitableLoaderError
 
 class ScenarioManager(Node):
-    SCENARIO_NAME="Tower of Hanoi"
 
     def __init__(self, node_name: str = "scenario_manager"):
         super().__init__(node_name)
@@ -125,7 +124,7 @@ class ScenarioManager(Node):
                 
     def _initialize_service_servers(self):
         self.setup_scenario_srv = self.create_service(LoadScenario, '~/load_scenario', self._load_scenario_cb, callback_group=self.pass_through_cbg)
-        self.reset_scenario_srv = self.create_service(Trigger, '~/reset_scenario', self._reset_scenario_cb, callback_group=self.pass_through_cbg)
+        self.reset_scenario_srv = self.create_service(ResetScenario, '~/reset_scenario', self._reset_scenario_cb, callback_group=self.pass_through_cbg)
 
 
     def _load_scenario_cb(self, req: LoadScenario.Request, resp: LoadScenario.Response):
@@ -151,32 +150,19 @@ class ScenarioManager(Node):
             resp.result = self._srv_res(msg, ServiceResult.ERROR, ServiceErrorCode.ERROR_VALUE)
             return resp
         
-        self.get_logger().info(f"Loading scenario into scene: {self._scenario.name}")
-        objs_to_add, col_mtrx_upds = self._scenario.to_msg()
-        # add collision obj from scenario:
-        add_obj_req = AddCollisionObjects.Request()
-        add_obj_req.collision_objects = objs_to_add
-        add_cli_resp : AddCollisionObjects.Response | None = self._call_and_wait(self.add_cli, add_obj_req)
-        
-        if add_cli_resp is None:
-            resp.result = self._srv_res(f"No response from service {self.add_cli}", ServiceResult.ERROR, ServiceErrorCode.ERROR)
-            return resp
-        if add_cli_resp.result.return_type != ServiceResult.SUCCESS:
-            resp.result = self._srv_res(f"Failed to load scenario: {add_cli_resp.result.message}", add_cli_resp.result.return_type, add_cli_resp.result.error_code)
-            return resp
- 
-        self._scenario.loaded_in_scene = True
-        success_msg = f"Successful setup up the {self.SCENARIO_NAME} scenario."
-        self.get_logger().info(success_msg)
-        resp.result = self._srv_res(success_msg, ServiceResult.SUCCESS, ServiceErrorCode.NO_ERROR)
+        resp.result = self._load_scenario_into_scene(self._scenario)
         return resp
 
 
-    def _reset_scenario_cb(self, _: Trigger_Request, resp: Trigger_Response):
+    def _reset_scenario_cb(self, _: ResetScenario.Request, resp: ResetScenario.Response):
         err_msg = "Resetting of scenario not implemented"
-        self.get_logger().warning(err_msg)
-        resp.message = err_msg
-        resp.success = False
+        if self._scenario is None:
+            err_msg = "No scenario loaded, cannot reset."
+            self.get_logger().warning(err_msg)
+            resp.success = False
+            resp.message = err_msg
+            return resp
+        resp.result = self._load_scenario_into_scene(self._scenario)
         return resp
 
     def _call_and_wait(self, client: Client, request) -> Any | None:
@@ -194,7 +180,28 @@ class ScenarioManager(Node):
         
         result.error_code = srv_err_code
         return result
+    
+    def _load_scenario_into_scene(self, scenario: ScenarioInstance) -> ServiceResult:
+        res = ServiceResult()
+        self.get_logger().info(f"Loading scenario into scene: {scenario.name}")
+        objs_to_add, col_mtrx_upds = scenario.to_msg()
+        # add collision obj from scenario:
+        add_obj_req = AddCollisionObjects.Request()
+        add_obj_req.collision_objects = objs_to_add
+        add_cli_resp : AddCollisionObjects.Response | None = self._call_and_wait(self.add_cli, add_obj_req)
+        
+        if add_cli_resp is None:
+            res = self._srv_res(f"No response from service {self.add_cli}", ServiceResult.ERROR, ServiceErrorCode.ERROR)
+            return res
+        if add_cli_resp.result.return_type != ServiceResult.SUCCESS:
+            res = self._srv_res(f"Failed to load scenario: {add_cli_resp.result.message}", add_cli_resp.result.return_type, add_cli_resp.result.error_code)
+            return res
 
+        scenario.loaded_in_scene = True
+        success_msg = f"Successful setup up the {scenario.name} scenario."
+        self.get_logger().info(success_msg)
+        res = self._srv_res(success_msg, ServiceResult.SUCCESS, ServiceErrorCode.NO_ERROR)
+        return res
     
 def main():
     rclpy.init()
