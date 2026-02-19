@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     planning_pipelines: ["ompl", "pilz"]
-    default_planning_pipeline: "pilz"
+    default_planning_pipeline: "ompl"
 
     capabilities: >-
         move_group/MoveGroupExecuteTrajectoryAction

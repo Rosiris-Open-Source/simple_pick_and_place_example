@@ -1,6 +1,6 @@
 <launch>
   <!-- Launch arguments -->
-  <arg name="use_fake_hardware" default="true" description="Use fake hardware"/>
+  <arg name="mock_hardware" default="true" description="Use mock hardware"/>
   <arg name="gripper" default="robotiq_2f_85" description="Gripper type"/>
   <arg name="dof" default="7" description="Degrees of freedom"/>
   <arg name="use_sim_time" default="false" description="Use simulation time"/>
@@ -47,7 +47,7 @@
   <!-- Load robot description -->
   <let name="robot_description_content"
        value="$(command '$(find-exec xacro) $(var description_file_path) \
-                use_fake_hardware:=$(var use_fake_hardware) \
+                use_fake_hardware:=$(var mock_hardware) \
                 gripper:=$(var gripper) \
                 dof:=$(var dof)')"/>
 
@@ -56,12 +56,6 @@
     <param name="robot_description" value="$(var robot_description_content)"/>
     <param name="use_sim_time" value="$(var use_sim_time)"/>
   </node>
-
-  <node pkg="tf2_ros"
-        exec="static_transform_publisher"
-        name="static_transform_publisher"
-        output="log"
-        args="0 0 0 0 0 0 world base_link"/>
 
   <!-- ROS2 Control Node -->
   <node pkg="controller_manager" exec="ros2_control_node" output="both">

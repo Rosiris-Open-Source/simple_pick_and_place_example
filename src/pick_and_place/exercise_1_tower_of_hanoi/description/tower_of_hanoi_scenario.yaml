@@ -38,5 +38,5 @@ collision_objects:
         dimensions: [0.04, 0.04, 0.04]
     subframes:
       - name: "grasp_point"                  
-        pose: { position: {x: -0.04, z: 0.02}, orientation: {r: 90, y: 90}}  
+        pose: { position: {x: -0.1, y: 0.1,  z: 0.6}, orientation: {r: 90, y: 90}}  
     allowed_touch_links : ["cube_2"]
