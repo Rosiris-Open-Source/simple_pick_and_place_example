@@ -40,40 +40,34 @@ void PlanningSceneManager::initializeServices()
 {
   // Create service servers
   add_collision_objects_srv_ = create_service<rosiris_manip_srv::AddCollisionObjects>(
-    std::string(get_name()) + "/add_collision_objects",
-    std::bind(
-      &PlanningSceneManager::addCollisionObjects, this, std::placeholders::_1,
-      std::placeholders::_2));
+    "~/add_collision_objects", std::bind(
+                                 &PlanningSceneManager::addCollisionObjects, this,
+                                 std::placeholders::_1, std::placeholders::_2));
 
   remove_collision_objects_srv_ = create_service<rosiris_manip_srv::RemoveCollisionObjects>(
-    std::string(get_name()) + "/remove_collision_objects",
-    std::bind(
-      &PlanningSceneManager::removeCollisionObjects, this, std::placeholders::_1,
-      std::placeholders::_2));
+    "~/remove_collision_objects", std::bind(
+                                    &PlanningSceneManager::removeCollisionObjects, this,
+                                    std::placeholders::_1, std::placeholders::_2));
 
   move_collision_objects_srv_ = create_service<rosiris_manip_srv::MoveCollisionObjects>(
-    std::string(get_name()) + "/move_collision_objects",
-    std::bind(
-      &PlanningSceneManager::moveCollisionObjects, this, std::placeholders::_1,
-      std::placeholders::_2));
+    "~/move_collision_objects", std::bind(
+                                  &PlanningSceneManager::moveCollisionObjects, this,
+                                  std::placeholders::_1, std::placeholders::_2));
 
   attach_collision_object_srv_ = create_service<rosiris_manip_srv::AttachCollisionObject>(
-    std::string(get_name()) + "/attach_collision_object",
-    std::bind(
-      &PlanningSceneManager::attachCollisionObject, this, std::placeholders::_1,
-      std::placeholders::_2));
+    "~/attach_collision_object", std::bind(
+                                   &PlanningSceneManager::attachCollisionObject, this,
+                                   std::placeholders::_1, std::placeholders::_2));
 
   detach_collision_object_srv_ = create_service<rosiris_manip_srv::DetachCollisionObject>(
-    std::string(get_name()) + "/detach_collision_object",
-    std::bind(
-      &PlanningSceneManager::detachCollisionObject, this, std::placeholders::_1,
-      std::placeholders::_2));
+    "~/detach_collision_object", std::bind(
+                                   &PlanningSceneManager::detachCollisionObject, this,
+                                   std::placeholders::_1, std::placeholders::_2));
 
   update_allowed_collisions_srv_ = create_service<rosiris_manip_srv::UpdateAllowedCollisions>(
-    std::string(get_name()) + "/update_allowed_collisions",
-    std::bind(
-      &PlanningSceneManager::updateAllowedCollisions, this, std::placeholders::_1,
-      std::placeholders::_2));
+    "~/update_allowed_collisions", std::bind(
+                                     &PlanningSceneManager::updateAllowedCollisions, this,
+                                     std::placeholders::_1, std::placeholders::_2));
 
   RCLCPP_INFO(get_logger(), "Planning Scene Manager started.");
 }
