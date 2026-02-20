@@ -43,5 +43,5 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES builtin_interfaces ${THIS_PACKAGE_INCLUDE_DEPENDS}
   ADD_LINTER_TESTS
 )
-
+ament_export_dependencies(rosidl_default_runtime)
 ament_package()
