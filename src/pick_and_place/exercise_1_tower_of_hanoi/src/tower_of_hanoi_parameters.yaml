@@ -4,14 +4,12 @@ tower_of_hanoi:
     description: "Specifies the timeout for service calls in milliseconds.",
     default_value: 5000,
     validation: {
-      gt_eq<>: 0,
-      not_empty<>: null,
+      gt_eq<>: [0],
     },
     read_only: true
   }
   gripper_names: {
     type: string_array,
-    default_value: [],
     description: "(optional) Specifies the joints for writing into another controllers reference. This parameter is only relevant when chaining the output of this controller to the input of another controller.",
     validation: {
       unique<>: null,
@@ -19,11 +17,17 @@ tower_of_hanoi:
     },
     read_only: true
   }
+  used_gripper: {
+    type: string,
+    description: "Specifies the name of the gripper to use.",
+    validation: {
+      not_empty<>: null,
+    },
+  }
   grippers:
     __map_gripper_names:
       eef_link: {
         type: string,
-        default_value: "",
         description: "Name of the end-effector link for this gripper.",
         read_only: true,
         validation: {

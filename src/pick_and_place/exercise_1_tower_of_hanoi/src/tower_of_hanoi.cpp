@@ -13,7 +13,7 @@ using GoalHandleGripper =
 TowerOfHanoi::TowerOfHanoi(std::string node_name,
                            const rclcpp::NodeOptions &options)
     : Node(node_name, options) {
-  declareAndGetParameters();
+  getParameters();
   setupServiceClients();
   setupActionClients();
 }
@@ -68,7 +68,7 @@ void TowerOfHanoi::buildTowerOfHanoi() {
   // 4. Close Gripper
   closeGripper();
 
-  if (!attachObjectToGripper("cube_3", {})) {
+  if (!attachObjectToGripper("cube_3")) {
     return;
   }
 
@@ -86,35 +86,32 @@ void TowerOfHanoi::buildTowerOfHanoi() {
   }
 }
 
-void TowerOfHanoi::declareAndGetParameters() {
-  // eef link
-  const std::string eef_link_param_id = "eef_link";
-  auto eef_link_param_desc = rcl_interfaces::msg::ParameterDescriptor{};
-  eef_link_param_desc.description =
-      "Name of the end effector link which is used";
-  eef_link_param_desc.type = rclcpp::ParameterType::PARAMETER_STRING;
-  declare_parameter<std::string>(eef_link_param_id, "robotiq_85_tip_link",
-                                 eef_link_param_desc);
-  eef_link_ = get_parameter(eef_link_param_id).as_string();
-  RCLCPP_INFO(get_logger(), "%s = %s", eef_link_param_id.c_str(),
-              eef_link_.c_str());
-  const std::string src_call_timeout_param_id = "srv_call_timeout";
-  auto srv_call_timeout_descr = rcl_interfaces::msg::ParameterDescriptor{};
-  srv_call_timeout_descr.description =
-      "How long to wait for services call to complete in ms";
-  srv_call_timeout_descr.type = rclcpp::ParameterType::PARAMETER_INTEGER;
-  rcl_interfaces::msg::IntegerRange int_range;
-  int_range.from_value = 0;
-  int_range.to_value = std::numeric_limits<int64_t>::max();
-  int_range.step = 1;
-  srv_call_timeout_descr.integer_range.push_back(int_range);
+void TowerOfHanoi::getParameters() {
+  param_listener_ = std::make_shared<tower_of_hanoi::ParamListener>(
+      get_node_parameters_interface());
+  params_ = param_listener_->get_params();
 
-  // Declare parameter with descriptor
-  declare_parameter<int64_t>(src_call_timeout_param_id, 5000,
-                             srv_call_timeout_descr);
-  srv_call_timeout_ = get_parameter(src_call_timeout_param_id).as_int();
-  RCLCPP_INFO(get_logger(), "%s = %ld", src_call_timeout_param_id.c_str(),
-              srv_call_timeout_);
+  // validate parameters
+  if (params_.gripper_names.empty()) {
+    throw std::runtime_error("Parameter 'gripper_names' cannot be empty.");
+  }
+  for (const auto &gripper_name : params_.gripper_names) {
+    auto gripper_it = params_.grippers.gripper_names_map.find(gripper_name);
+    if (gripper_it == params_.grippers.gripper_names_map.end()) {
+      throw std::runtime_error("Gripper '" + gripper_name +
+                               "' listed in 'gripper_names' is not defined in "
+                               "'grippers' parameter.");
+    }
+    if (gripper_it->second.eef_link.empty()) {
+      throw std::runtime_error("Gripper '" + gripper_name +
+                               "' must have a non-empty 'eef_link' defined.");
+    }
+  }
+  if (std::find(params_.gripper_names.begin(), params_.gripper_names.end(),
+                params_.used_gripper) == params_.gripper_names.end()) {
+    throw std::runtime_error("Parameter 'used_gripper' must be one of the "
+                             "entries in 'gripper_names'.");
+  }
 }
 
 void TowerOfHanoi::setupServiceClients() {
@@ -200,18 +197,19 @@ void TowerOfHanoi::configurePlannerPilzLin(
   move_group.setMaxAccelerationScalingFactor(0.2);
 }
 
-bool TowerOfHanoi::attachObjectToGripper(
-    const std::string &obj_to_attach,
-    std::vector<std::string> allowed_touch_links) {
+bool TowerOfHanoi::attachObjectToGripper(const std::string &obj_to_attach) {
   auto attach_req = std::make_shared<
       rosiris_manipulation_interfaces::srv::AttachCollisionObject::Request>();
-  attach_req->attach_to_link = eef_link_;
+  attach_req->attach_to_link =
+      params_.grippers.gripper_names_map.at(params_.used_gripper).eef_link;
   attach_req->collision_object_id = obj_to_attach;
-  attach_req->allowed_touch_links = std::move(allowed_touch_links);
+  attach_req->allowed_touch_links =
+      params_.grippers.gripper_names_map.at(params_.used_gripper)
+          .allowed_touch_links;
 
   auto result_future = robot_attach_cli_->async_send_request(attach_req);
-  auto status =
-      result_future.wait_for(std::chrono::milliseconds(srv_call_timeout_));
+  auto status = result_future.wait_for(
+      std::chrono::milliseconds(params_.srv_call_timeout));
   if (status != std::future_status::ready) {
     // either status == std::future_status::timeout
     // or future deferred
@@ -232,18 +230,20 @@ bool TowerOfHanoi::attachObjectToGripper(
   return true;
 }
 
-bool TowerOfHanoi::detachObjectFromGripper(
-    const std::string &obj_to_detach,
-    std::vector<std::string> disallowed_touch_links) {
+bool TowerOfHanoi::detachObjectFromGripper(const std::string &obj_to_detach) {
   auto detach_req = std::make_shared<
       rosiris_manipulation_interfaces::srv::DetachCollisionObject::Request>();
-  detach_req->detach_from_link = eef_link_;
+  detach_req->detach_from_link =
+      params_.grippers.gripper_names_map.at(params_.used_gripper).eef_link;
+  ;
   detach_req->collision_object_id = obj_to_detach;
-  detach_req->disallowed_touch_links = std::move(disallowed_touch_links);
+  detach_req->disallowed_touch_links =
+      params_.grippers.gripper_names_map.at(params_.used_gripper)
+          .allowed_touch_links;
 
   auto result_future = robot_detach_cli_->async_send_request(detach_req);
-  auto status =
-      result_future.wait_for(std::chrono::milliseconds(srv_call_timeout_));
+  auto status = result_future.wait_for(
+      std::chrono::milliseconds(params_.srv_call_timeout));
   if (status != std::future_status::ready) {
     // either status == std::future_status::timeout
     // or future deferred

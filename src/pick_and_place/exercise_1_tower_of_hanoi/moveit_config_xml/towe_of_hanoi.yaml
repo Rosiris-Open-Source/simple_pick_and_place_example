@@ -1,0 +1,13 @@
+/**:
+  ros__parameters:
+    gripper_names: ["gripper_robotiq_85"]
+    used_gripper: "gripper_robotiq_85"
+
+    grippers:
+      gripper_robotiq_85:
+        eef_link: "robotiq_85_tip_link"
+        allowed_touch_links:
+        - "robotiq_85_left_finger_tip_link"
+        - "robotiq_85_left_inner_knuckle_link"
+        - "robotiq_85_right_finger_tip_link"
+        - "robotiq_85_right_inner_knuckle_link"

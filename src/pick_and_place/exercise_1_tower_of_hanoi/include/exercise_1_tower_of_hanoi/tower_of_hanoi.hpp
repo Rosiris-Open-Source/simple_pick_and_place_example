@@ -32,13 +32,13 @@ namespace tower_of_hanoi {
 class TowerOfHanoi : public rclcpp::Node {
 public:
   TowerOfHanoi(std::string node_name = "hanoi_grasp_node",
-                    const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+               const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
   virtual ~TowerOfHanoi() = default;
 
   void buildTowerOfHanoi();
 
 protected:
-  void declareAndGetParameters();
+  void getParameters();
 
   void setupServiceClients();
 
@@ -50,11 +50,9 @@ protected:
   void configurePlannerPilzLin(
       moveit::planning_interface::MoveGroupInterface &move_group);
 
-  bool attachObjectToGripper(const std::string &obj_to_attach,
-                             std::vector<std::string> allowed_touch_links);
+  bool attachObjectToGripper(const std::string &obj_to_attach);
 
-  bool detachObjectFromGripper(const std::string &obj_to_detach,
-                               std::vector<std::string> disallowed_touch_links);
+  bool detachObjectFromGripper(const std::string &obj_to_detach);
 
   void homeRobot();
 
@@ -74,8 +72,6 @@ protected:
   // parameters
   std::shared_ptr<tower_of_hanoi::ParamListener> param_listener_;
   tower_of_hanoi::Params params_;
-  std::string eef_link_;
-  int64_t srv_call_timeout_;
 };
 
 } // namespace tower_of_hanoi
