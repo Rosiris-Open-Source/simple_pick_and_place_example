@@ -47,7 +47,7 @@ public:
     std::string node_name = "planning_scene_manager",
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
-  virtual ~PlanningSceneManager();
+  virtual ~PlanningSceneManager() = default;
 
   /**
    * @brief start the planning scene manager

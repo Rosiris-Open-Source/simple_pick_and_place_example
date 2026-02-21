@@ -61,6 +61,7 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Python modules
 ament_python_install_package(rosiris_manipulation_utils)
 
 install(PROGRAMS

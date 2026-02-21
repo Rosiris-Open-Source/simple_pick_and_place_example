@@ -34,8 +34,6 @@ PlanningSceneManager::PlanningSceneManager(
   RCLCPP_INFO(this->get_logger(), "initialization complete. Ready to receive requests.");
 }
 
-PlanningSceneManager::~PlanningSceneManager() {}
-
 void PlanningSceneManager::initializeServices()
 {
   // Create service servers
