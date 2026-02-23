@@ -3,4 +3,5 @@
 **/.nfs*
 # Python
 **/__pycache__/
-**/__123_test_around_123__.py
+**/__test_node_1__.py
+**/__test_node_2__.py
