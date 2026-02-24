@@ -10,7 +10,7 @@ def generate_launch_description():
             output="screen",
             parameters=[
                 {
-                    "path_to_scenario": "package://exercise_1_tower_of_hanoi/description/tower_of_hanoi_scenario.yaml"
+                    "path_to_scenario_file": "package://exercise_1_tower_of_hanoi/description/tower_of_hanoi_scenario.yaml"
                 }
             ],                                         
         )

@@ -3,11 +3,10 @@ from typing import List
 from rosiris_manipulation_interfaces.msg import CollisionMatrixUpdate as CollisionMatrixUpdateMsg
 from rosiris_manipulation_interfaces.msg import CollisionObject as RosirisColObjMsg
 
-from rosiris_manipulation_utils.scenario_models import MsgClass
 from rosiris_manipulation_utils.scenario_loader import ScenarioLoader, NoSuitableLoaderError, LOADER_REGISTRY
 from rosiris_manipulation_utils.utilities import get_file_type
 
-class ScenarioInstance(MsgClass):
+class ScenarioInstance():
     def __init__(self, path: str):
         self._scenario_loader = self._select_loader(path)
         self._scenario = self._scenario_loader.load_scenario(path)
@@ -23,13 +22,11 @@ class ScenarioInstance(MsgClass):
             f"No loader registered for file type {file_type}"
         )
 
-    def to_msg(self) -> tuple[List[RosirisColObjMsg], List[CollisionMatrixUpdateMsg]]:
-        return self._scenario.to_msg()
+    # delegate all attribute access to the underlying scenario
+    # e.g. instance.name -> returns instance._scenario.name
+    def __getattr__(self, item):
+        return getattr(self._scenario, item)
 
-    @property
-    def name(self) -> str:
-        return self._scenario.name()
-    
     @property
     def loaded_in_scene(self) -> bool:
         return self._loaded_in_scene

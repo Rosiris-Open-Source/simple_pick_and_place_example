@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, is_dataclass
 from typing import List, override
 from enum import IntEnum
 import math
@@ -270,5 +270,10 @@ class Scenario(MsgClass):
     def __bool__(self) -> bool:
         return bool(self.metadata)
     
+    @property
     def name(self) -> str:
         return self.metadata.name
+    
+    @property
+    def collision_object_ids(self) -> List[str]:
+        return [col_obj.id for col_obj in self.collision_objects]
