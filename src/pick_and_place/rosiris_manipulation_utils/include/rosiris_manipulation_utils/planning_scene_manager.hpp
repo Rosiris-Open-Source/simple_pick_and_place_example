@@ -35,6 +35,8 @@
 #include <rosiris_manipulation_interfaces/srv/add_collision_objects.hpp>
 #include <rosiris_manipulation_interfaces/srv/attach_collision_object.hpp>
 #include <rosiris_manipulation_interfaces/srv/detach_collision_object.hpp>
+#include <rosiris_manipulation_interfaces/srv/get_attached_collision_object_ids.hpp>
+#include <rosiris_manipulation_interfaces/srv/get_collision_object_ids.hpp>
 #include <rosiris_manipulation_interfaces/srv/move_collision_objects.hpp>
 #include <rosiris_manipulation_interfaces/srv/remove_collision_objects.hpp>
 #include <rosiris_manipulation_interfaces/srv/update_allowed_collisions.hpp>
@@ -130,6 +132,18 @@ private:
     std::shared_ptr<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions::Response>
       response);
 
+  void getAttachedCollisionObjectIds(
+    const std::shared_ptr<
+      rosiris_manipulation_interfaces::srv::GetAttachedCollisionObjectIds::Request>
+      _,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::GetAttachedCollisionObjectIds::Response>
+      response);
+
+  void getCollisionObjectIds(
+    const std::shared_ptr<rosiris_manipulation_interfaces::srv::GetCollisionObjectIds::Request> _,
+    std::shared_ptr<rosiris_manipulation_interfaces::srv::GetCollisionObjectIds::Response>
+      response);
+
   rosiris_manipulation_interfaces::msg::ServiceResult triggerMoveGroupSceneUpdate(bool is_diff);
   rosiris_manipulation_interfaces::msg::ServiceResult triggerMoveGroupSceneUpdate(
     moveit_msgs::msg::PlanningScene update);
@@ -149,6 +163,10 @@ private:
     detach_collision_object_srv_;
   rclcpp::Service<rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions>::SharedPtr
     update_allowed_collisions_srv_;
+  rclcpp::Service<rosiris_manipulation_interfaces::srv::GetAttachedCollisionObjectIds>::SharedPtr
+    get_attached_collision_obj_ids_srv_;
+  rclcpp::Service<rosiris_manipulation_interfaces::srv::GetCollisionObjectIds>::SharedPtr
+    get_active_collision_obj_ids_srv_;
 };
 }  // namespace rosiris_manipulation_utils
 

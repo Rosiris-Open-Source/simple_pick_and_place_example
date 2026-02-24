@@ -66,6 +66,15 @@ void PlanningSceneManager::initializeServices()
     "~/update_allowed_collisions", std::bind(
                                      &PlanningSceneManager::updateAllowedCollisions, this,
                                      std::placeholders::_1, std::placeholders::_2));
+  get_attached_collision_obj_ids_srv_ =
+    create_service<rosiris_manip_srv::GetAttachedCollisionObjectIds>(
+      "~/get_attached_collision_obj_ids", std::bind(
+                                            &PlanningSceneManager::getAttachedCollisionObjectIds,
+                                            this, std::placeholders::_1, std::placeholders::_2));
+  get_active_collision_obj_ids_srv_ = create_service<rosiris_manip_srv::GetCollisionObjectIds>(
+    "~/get_collision_obj_ids", std::bind(
+                                 &PlanningSceneManager::getCollisionObjectIds, this,
+                                 std::placeholders::_1, std::placeholders::_2));
 
   RCLCPP_INFO(get_logger(), "Planning Scene Manager started.");
 }
@@ -767,6 +776,58 @@ void PlanningSceneManager::updateAllowedCollisions(
     response->not_updated_object_ids.empty()
       ? "ACM updated successfully"
       : "Failed to update " + std::to_string(response->not_updated_object_ids.size()) + " link(s)";
+}
+
+void PlanningSceneManager::getAttachedCollisionObjectIds(
+  const std::shared_ptr<
+    rosiris_manipulation_interfaces::srv::GetAttachedCollisionObjectIds::Request>
+    _,
+  std::shared_ptr<rosiris_manipulation_interfaces::srv::GetAttachedCollisionObjectIds::Response>
+    response)
+{
+  {  // Lock internal planning scene
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
+    if (!scene)
+    {
+      response->result.return_type = rosiris_srv_result::ERROR;
+      response->result.error_code.error_code =
+        rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      response->result.message = "Planning scene not available";
+      return;
+    }
+    scene->getAttachedCollisionObjectMsgs(response->attached_objects);
+  }  // Released lock internal planning scene
+
+  response->result.return_type = rosiris_srv_result::SUCCESS;
+  response->result.error_code.error_code = rosiris_srv_error_codes::NO_ERROR;
+  response->result.message = "Successfully retrieved attached collision objects in scene.";
+}
+
+void PlanningSceneManager::getCollisionObjectIds(
+  const std::shared_ptr<rosiris_manipulation_interfaces::srv::GetCollisionObjectIds::Request> _,
+  std::shared_ptr<rosiris_manipulation_interfaces::srv::GetCollisionObjectIds::Response> response)
+{
+  std::vector<moveit_msgs::msg::CollisionObject> collision_objects;
+  {  // Lock internal planning scene
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
+    if (!scene)
+    {
+      response->result.return_type = rosiris_srv_result::ERROR;
+      response->result.error_code.error_code =
+        rosiris_srv_error_codes::ERROR_ACQUIRE_PLANNING_SCENE;
+      response->result.message = "Planning scene not available";
+      return;
+    }
+    scene->getCollisionObjectMsgs(collision_objects);
+  }  // Released lock internal planning scene
+
+  for (const auto & obj : collision_objects)
+  {
+    response->object_ids.push_back(obj.id);
+  }
+  response->result.return_type = rosiris_srv_result::SUCCESS;
+  response->result.error_code.error_code = rosiris_srv_error_codes::NO_ERROR;
+  response->result.message = "Successfully retrieved collision objects in scene.";
 }
 
 rosiris_manip_msg::ServiceResult PlanningSceneManager::triggerMoveGroupSceneUpdate(bool is_diff)
