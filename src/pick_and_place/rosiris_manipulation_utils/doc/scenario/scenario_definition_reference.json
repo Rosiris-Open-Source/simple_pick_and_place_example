@@ -63,7 +63,8 @@
     },
     "subframe": {
       "name": "string",
-      "pose": "pose"
+      "pose": "pose",
+      "is_grasp_point": "bool"
     },
     "collision_object": {
       "header": "header",

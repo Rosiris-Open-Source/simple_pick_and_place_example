@@ -67,6 +67,7 @@ mesh:
 subframe:
   name: string                    # Required
   pose: pose                      # Optional, default: identity pose
+  is_grasp_point: bool            # Optional, default: false
 
 collision_object:
   header: header                  # Required

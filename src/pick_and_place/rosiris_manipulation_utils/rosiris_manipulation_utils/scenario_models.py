@@ -153,6 +153,7 @@ class Mesh(MsgClass):
 class Subframe(MsgClass):
     name: str
     pose: Pose = field(default_factory=Pose)
+    is_grasp_point: bool = False
 
     @override
     def to_msg(self) -> tuple[str, PoseMsg]:
