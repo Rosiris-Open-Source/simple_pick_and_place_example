@@ -11,8 +11,11 @@ set(PACKAGE_INCLUDE_DEPS
   generate_parameter_library
   geometry_msgs
   moveit_ros_planning_interface
+  moveit_visual_tools
   rclcpp
   rosiris_manipulation_interfaces
+  rviz_visual_tools
+  tf2
 )
 foreach(Dependency IN ITEMS ${PACKAGE_INCLUDE_DEPS})
   find_package(${Dependency} REQUIRED)
@@ -32,8 +35,10 @@ target_include_directories(tower_of_hanoi PRIVATE
 )
 
 target_link_libraries(tower_of_hanoi 
-  moveit_ros_planning_interface::moveit_move_group_interface  
+  moveit_ros_planning_interface::moveit_move_group_interface
+  moveit_visual_tools::moveit_visual_tools
   rclcpp::rclcpp
+  rviz_visual_tools::rviz_visual_tools
   ${control_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   ${rosiris_manipulation_interfaces_TARGETS}

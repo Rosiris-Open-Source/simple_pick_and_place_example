@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-BOX_ID="box"
+BOX_ID="box_38473238"
 FRAME="world"
 EEF_LINK="end_effector_link"
 

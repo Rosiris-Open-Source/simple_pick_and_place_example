@@ -11,5 +11,9 @@ ros2 run exercise_1_tower_of_hanoi tower_of_hanoi \
   --ros-args --params-file $(ros2 pkg prefix exercise_1_tower_of_hanoi)/share/exercise_1_tower_of_hanoi/moveit_config_xml/towe_of_hanoi.yaml
 
 
+scenario_manager:
+ros2 service call /scenario_manager/load_scenario rosiris_manipulation_interfaces/srv/LoadScenario '{ path_to_scenario_file: "package://exercise_1_tower_of_hanoi/description/tower_of_hanoi_scenario.yaml"}'
+ros2 service call /scenario_manager/reset_scenario rosiris_manipulation_interfaces/srv/ResetScenario {}\
 
+gripper:
 ros2 action send_goal /robotiq_gripper_controller/gripper_cmd control_msgs/action/ParallelGripperCommand '{ command: { name: ["robotiq_85_left_knuckle_joint/position"], position: [0.4], effort: [0.1]}}'

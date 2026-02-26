@@ -14,21 +14,11 @@
   <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
   <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_visual_tools</depend>
   <depend>rclcpp</depend>
-
-  <exec_depend>joint_state_publisher</exec_depend>
-  <exec_depend>launch_ros</exec_depend>
-  <exec_depend>launch</exec_depend>
-  <exec_depend>rclpy</exec_depend>
-  <exec_depend>rosiris_manipulation_utils</exec_depend>
-  <exec_depend>rviz2</exec_depend>
-  <exec_depend>tf_transformations</exec_depend>
-  <exec_depend>urdf</exec_depend>
-  <exec_depend>xacro</exec_depend>
-  <exec_depend>moveit_msgs</exec_depend>
-  <exec_depend>rosiris_manipulation_interfaces</exec_depend>
-  <exec_depend>shape_msgs</exec_depend>
-  <exec_depend>std_srvs</exec_depend>
+  <depend>rosiris_manipulation_interfaces</depend>
+  <depend>rviz_visual_tools</depend>
+  <depend>tf2</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

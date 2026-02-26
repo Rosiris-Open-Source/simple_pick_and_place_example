@@ -3,91 +3,57 @@
 #include <rcl_interfaces/msg/integer_range.hpp>
 #include <rclcpp/parameter.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rosiris_manipulation_interfaces/msg/collision_entry.hpp>
 #include <rosiris_manipulation_interfaces/msg/service_result.hpp>
+#include <rviz_visual_tools/rviz_visual_tools.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 namespace tower_of_hanoi {
 
 using ParallelGripperCommand = control_msgs::action::ParallelGripperCommand;
 using GoalHandleGripper =
     rclcpp_action::ClientGoalHandle<ParallelGripperCommand>;
 
-TowerOfHanoi::TowerOfHanoi(std::string node_name,
+TowerOfHanoi::TowerOfHanoi(std::shared_ptr<TransformManager> transform_manager,
+                           std::string reference_frame, std::string node_name,
                            const rclcpp::NodeOptions &options)
-    : Node(node_name, options) {
+    : Node(node_name, options), transform_manager_(transform_manager),
+      reference_frame_(reference_frame) {
   getParameters();
   setupServiceClients();
   setupActionClients();
 }
 
 void TowerOfHanoi::buildTowerOfHanoi() {
-  auto move_group = moveit::planning_interface::MoveGroupInterface(
-      shared_from_this(), "manipulator_robotiq_85");
-  configurePlannerOmpl(move_group);
-  // 1. Pre-grasp Pose (5cm +y from grasp_point)
-  // Assuming 'grasp_point' is a frame in your TF tree or planning scene
-  geometry_msgs::msg::PoseStamped grasp_pose;
-  // In a real scenario, lookupTransform "base_link" ->
-  // "move_group/cube_1/grasp_point"
-  grasp_pose.header.frame_id = "move_group/cube_3/grasp_point";
-  grasp_pose.pose.position.y = 0.05; // 5cm offset
-  grasp_pose.pose.orientation.w = 1.0;
+  auto cube3 = cubes_.at("cube_3");
+  auto cube2 = cubes_.at("cube_2");
+  auto cube1 = cubes_.at("cube_1");
 
-  move_group.setPoseTarget(grasp_pose);
-  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-  RCLCPP_INFO(this->get_logger(), "Planning to pregrasp pose...");
-  auto success = move_group.plan(my_plan);
+  using Step = std::function<bool()>;
 
-  if (success == moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_INFO(this->get_logger(), "Planning successful, executing...");
-    move_group.execute(my_plan);
-  } else {
-    RCLCPP_ERROR(this->get_logger(), "Planning failed! Error code: %d",
-                 success.val);
-    return;
-  }
-  // 2. Open Gripper
-  openGripper();
+  std::vector<Step> plan = {
+      [&] { return homeRobot(); },
+      [&] { return pickCube(cube3); },
+      [&] { return placeCubeAtLocation(cube3, Location::MIDDLE); },
+      [&] { return pickCube(cube2); },
+      [&] { return placeCubeOnCube(cube2, cube3); },
+      [&] { return pickCube(cube1); },
+      [&] { return placeCubeAtLocation(cube1, Location::LEFT); },
+      [&] { return pickCube(cube2); },
+      [&] { return placeCubeOnCube(cube2, cube1); },
+      [&] { return pickCube(cube3); },
+      [&] { return placeCubeOnCube(cube3, cube2); },
+      [&] { return homeRobot(); }};
 
-  // configure to move lin
-  configurePlannerPilzLin(move_group);
-
-  // 3. Move to Grasp Point
-  grasp_pose.pose.position.y = 0.0;
-  move_group.setPoseTarget(grasp_pose);
-  RCLCPP_INFO(this->get_logger(), "Planning to grasp pose...");
-  success = move_group.plan(my_plan);
-
-  if (success == moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_INFO(this->get_logger(), "Planning successful, executing...");
-    move_group.execute(my_plan);
-  } else {
-    RCLCPP_ERROR(this->get_logger(), "Planning failed! Error code: %d",
-                 success.val);
-    return;
-  }
-
-  // 4. Close Gripper
-  closeGripper();
-
-  if (!attachObjectToGripper("cube_3")) {
-    return;
-  }
-
-  // 5. Move Linear (Post-grasp 5cm +y)
-  std::vector<geometry_msgs::msg::Pose> waypoints;
-  geometry_msgs::msg::Pose post_grasp = move_group.getCurrentPose().pose;
-  post_grasp.position.y += 0.05;
-  waypoints.push_back(post_grasp);
-
-  moveit_msgs::msg::RobotTrajectory trajectory;
-  double fraction =
-      move_group.computeCartesianPath(waypoints, 0.01, 0.0, trajectory);
-  if (fraction > 0.9) {
-    move_group.execute(trajectory);
+  for (auto &step : plan) {
+    if (!step()) {
+      return;
+    }
   }
 }
 
 void TowerOfHanoi::getParameters() {
-  param_listener_ = std::make_shared<tower_of_hanoi::ParamListener>(
+  param_listener_ = std::make_unique<tower_of_hanoi::ParamListener>(
       get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
@@ -146,6 +112,23 @@ void TowerOfHanoi::setupServiceClients() {
                        "waiting for service "
                            << robot_detach_cli_->get_service_name() << " ...");
   }
+
+  scene_upd_collision_srv_ = create_client<
+      rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions>(
+      "planning_scene_manager/update_allowed_collisions");
+  while (!scene_upd_collision_srv_->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      std::stringstream interrup_err_msg;
+      interrup_err_msg << "Interrupted while waiting for <"
+                       << scene_upd_collision_srv_->get_service_name()
+                       << "> service to become available.";
+      throw std::runtime_error(interrup_err_msg.str());
+    }
+    RCLCPP_INFO_STREAM(get_logger(),
+                       "waiting for service "
+                           << scene_upd_collision_srv_->get_service_name()
+                           << " ...");
+  }
 }
 
 void TowerOfHanoi::setupActionClients() {
@@ -186,9 +169,16 @@ void TowerOfHanoi::configurePlannerPilzLin(
   // Options are usually "LIN", "CIRC", or "PTP"
   move_group.setPlannerId("LIN");
 
-  // 3. Pilz is very strict. It requires well-defined limits.
-  move_group.setPlanningTime(
-      2.0); // LIN plans are fast (math-based, not search-based)
+  // -- Set Planning Parameters --
+  move_group.setPlanningTime(5.0); // Give it time to find a solution
+  move_group.setNumPlanningAttempts(10);
+  move_group.setGoalTolerance(0.01);
+
+  // -- Set Tolerances --
+  // Position tolerance in meters (e.g., 0.001 = 1mm)
+  move_group.setGoalPositionTolerance(0.001);
+  // Orientation tolerance in radians (e.g., 0.01 = ~0.5 degrees)
+  move_group.setGoalOrientationTolerance(0.01);
 
   // 4. Set scaling factors
   // Note: Pilz often ignores global MoveIt velocity scaling unless
@@ -264,35 +254,450 @@ bool TowerOfHanoi::detachObjectFromGripper(const std::string &obj_to_detach) {
   return true;
 }
 
-void TowerOfHanoi::homeRobot() {
+bool TowerOfHanoi::updateAllowedCollision(
+    const Cube &cube, const std::vector<std::string> &allow_collisions,
+    const std::vector<std::string> &disallow_collisions,
+    rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::_mode_type
+        mode) {
+  auto update_col_req = std::make_shared<
+      rosiris_manipulation_interfaces::srv::UpdateAllowedCollisions::Request>();
+
+  // create collision matrix update msg
+  rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate
+      collision_matrix_update{};
+  collision_matrix_update.target_link = cube.id();
+  collision_matrix_update.mode = mode;
+  // update collisions
+  for (const auto &allow_link : allow_collisions) {
+    collision_matrix_update.collision_entries.emplace_back()
+        .set__touch_link(allow_link)
+        .set__collision_allowed(true);
+  }
+  for (const auto &disallow_link : disallow_collisions) {
+    collision_matrix_update.collision_entries.emplace_back()
+        .set__touch_link(disallow_link)
+        .set__collision_allowed(false);
+  }
+  update_col_req->collision_matrix_updates.push_back(collision_matrix_update);
+
+  auto result_future =
+      scene_upd_collision_srv_->async_send_request(update_col_req);
+  auto status = result_future.wait_for(
+      std::chrono::milliseconds(params_.srv_call_timeout));
+  if (status != std::future_status::ready) {
+    // either status == std::future_status::timeout
+    // or future deferred
+    scene_upd_collision_srv_->remove_pending_request(result_future);
+    RCLCPP_ERROR_STREAM(get_logger(),
+                        "service call to "
+                            << scene_upd_collision_srv_->get_service_name()
+                            << " failed.");
+    return false;
+  }
+  auto result = result_future.get()->result;
+
+  using ret_type = rosiris_manipulation_interfaces::msg::ServiceResult;
+  if (result.return_type != ret_type::SUCCESS) {
+    return false;
+  }
+
+  return true;
+}
+
+bool TowerOfHanoi::homeRobot() {
   auto move_group = moveit::planning_interface::MoveGroupInterface(
       shared_from_this(), "manipulator");
   configurePlannerOmpl(move_group);
 
-  // Use the "Home" named target from your SRDF
-  move_group.setNamedTarget("Home");
+  // Use the "Home" named target from SRDF
+  const std::string target = "Home";
+  move_group.setNamedTarget(target);
 
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-  RCLCPP_INFO(this->get_logger(), "Planning to Home state...");
+  RCLCPP_INFO(get_logger(), "Planning to target: '%s'.", target.c_str());
 
-  auto success = move_group.plan(my_plan);
-
-  if (success == moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_INFO(this->get_logger(), "Plan found! Executing...");
-    move_group.execute(my_plan);
-  } else {
-    RCLCPP_ERROR(this->get_logger(), "Planning failed! Code: %d", success.val);
+  auto plan_result = move_group.plan(my_plan);
+  if (plan_result != moveit::core::MoveItErrorCode::SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Planning failed for target '%s' Code: %d",
+                 target.c_str(), plan_result.val);
+    return false;
   }
+
+  RCLCPP_INFO(get_logger(), "Plan found for target '%s', executing...",
+              target.c_str());
+
+  moveit::core::MoveItErrorCode move_result;
+  move_result = move_group.execute(my_plan);
+  if (move_result != moveit::core::MoveItErrorCode::SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Execution failed for target '%s' Code: %d",
+                 target.c_str(), move_result.val);
+    return false;
+  }
+  RCLCPP_INFO(get_logger(), "Successfully moved to target '%s'",
+              target.c_str());
+
+  return true;
 }
 
-void TowerOfHanoi::sendGripperCommand(double pos, double effort) {
-  auto goal_msg = ParallelGripperCommand::Goal();
-  goal_msg.command.position.push_back(pos);
-  goal_msg.command.effort.push_back(effort);
-  gripper_client_->wait_for_action_server();
-  gripper_client_->async_send_goal(goal_msg);
-  // Add sleep or wait for result logic here
-  rclcpp::sleep_for(std::chrono::seconds(1));
+bool TowerOfHanoi::pickCube(const Cube &cube) {
+  removeVisualizedPoses();
+  auto grasp_frame = cube.grasp_point();
+  geometry_msgs::msg::PoseStamped grasp_pose{};
+  grasp_pose.header.frame_id = grasp_frame;
+  grasp_pose.pose.orientation.w = 1.0;
+  visualizePose(grasp_pose, grasp_frame + "_grasp");
+
+  // create approach pose
+  auto approach_vector = pre_grasp_direction_ * pre_grasp_distance_;
+  geometry_msgs::msg::PoseStamped approach_grasp_pose = grasp_pose;
+  approach_grasp_pose.pose.position.x = approach_vector.x();
+  approach_grasp_pose.pose.position.y = approach_vector.y();
+  approach_grasp_pose.pose.position.z = approach_vector.z();
+
+  visualizePose(approach_grasp_pose, grasp_frame + "_approach_grasp");
+  if (!moveOmpl(approach_grasp_pose)) {
+    RCLCPP_ERROR(get_logger(), "Failed to move to approach grasp pose '%s'.",
+                 grasp_frame.c_str());
+    return false;
+  }
+
+  if (!openGripper()) {
+    RCLCPP_ERROR(get_logger(), "Failed to open gripper.");
+    return false;
+  }
+
+  if (!moveLin(grasp_pose)) {
+    RCLCPP_ERROR(get_logger(), "Failed to move to grasp point '%s'.",
+                 grasp_frame.c_str());
+    return false;
+  }
+
+  if (!closeGripper()) {
+    RCLCPP_ERROR(get_logger(), "Failed to close gripper.");
+    return false;
+  }
+
+  if (!attachObjectToGripper(cube.id())) {
+    RCLCPP_ERROR(get_logger(), "Failed to attach object '%s'.",
+                 cube.id().c_str());
+    return false;
+  }
+
+  auto retreat_vector = post_grasp_direction_ * post_grasp_distance_;
+  geometry_msgs::msg::PoseStamped retreat_grasp_pose = grasp_pose;
+  retreat_grasp_pose.pose.position.x = retreat_vector.x();
+  retreat_grasp_pose.pose.position.y = retreat_vector.y();
+  retreat_grasp_pose.pose.position.z = retreat_vector.z();
+
+  visualizePose(retreat_grasp_pose, grasp_frame + "_retreat_grasp");
+  if (!moveLin(retreat_grasp_pose)) {
+    RCLCPP_ERROR(get_logger(), "Failed to move to retreat grasp pose '%s'.",
+                 grasp_frame.c_str());
+    return false;
+  }
+
+  // update collisions to exclusive only allow collisions with gripper since we
+  // pick the cube it was before allowed to touch the objects it was placed on
+  // which we don't want anymore
+  if (!updateAllowedCollision(
+          cube,
+          params_.grippers.gripper_names_map.at(params_.used_gripper)
+              .allowed_touch_links,
+          {},
+          rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::
+              REPLACE)) {
+    RCLCPP_ERROR(get_logger(),
+                 "Failed to updated allowed collisions for obj '%s'.",
+                 cube.id().c_str());
+    return false;
+  }
+
+  return true;
+}
+
+bool TowerOfHanoi::placeCubeAtLocation(const Cube &cube_to_place,
+                                       const Location &location) {
+  geometry_msgs::msg::PoseStamped place_pose{};
+  try {
+    place_pose.header.frame_id = place_locations_.at(location);
+  } catch (const std::out_of_range &e) {
+    RCLCPP_ERROR(get_logger(), "Invalid location specified.");
+    return false;
+  }
+  place_pose.pose.position.z =
+      cube_to_place.dimension() / 2.0 + cube_to_place.grasp_pose_offset();
+  place_pose.pose.orientation = tf2::toMsg(rot_place_to_cube_);
+
+  // create approach pose
+  auto approach_vector = pre_place_distance_ * pre_place_location_direction_;
+  geometry_msgs::msg::PoseStamped approach_place_pose = place_pose;
+  approach_place_pose.pose.position.x = approach_vector.x();
+  approach_place_pose.pose.position.y = approach_vector.y();
+  approach_place_pose.pose.position.z = approach_vector.z();
+
+  // create retreat pose
+  auto retreat_vector = post_place_distance_ * post_place_location_direction_;
+  geometry_msgs::msg::PoseStamped retreat_place_pose = place_pose;
+  retreat_place_pose.pose.position.x = retreat_vector.x();
+  retreat_place_pose.pose.position.y = retreat_vector.y();
+  retreat_place_pose.pose.position.z = retreat_vector.z();
+  return placeCube(cube_to_place, place_pose, approach_place_pose,
+                   retreat_place_pose, {"desk_1_link"});
+}
+
+bool TowerOfHanoi::placeCubeOnCube(const Cube &cube_to_place,
+                                   const Cube &target_cube) {
+  geometry_msgs::msg::PoseStamped place_pose{};
+  place_pose.header.frame_id = target_cube.ref_frame();
+  // Compute placement height so the bottom face of cube_to_place
+  // rests exactly on top of target_cube.
+  //
+  // The reference frame is centered in target_cube.
+  // Therefore:
+  // - Add half the height of target_cube (top surface relative to its center)
+  // - Add half the height of cube_to_place (its center relative to its bottom)
+  // - Add grasp_pose_offset(), which accounts for the vertical offset
+  //   between the cube center and the grasp frame used during manipulation
+  //
+  // This ensures the cubes are stacked without penetration or gap.
+  place_pose.pose.position.z = cube_to_place.dimension() / 2.0 +
+                               target_cube.dimension() / 2.0 +
+                               cube_to_place.grasp_pose_offset();
+  place_pose.pose.orientation = tf2::toMsg(rot_place_to_cube_);
+
+  // create approach pose
+  auto approach_vector = pre_place_distance_ * pre_place_cube_direction_;
+  geometry_msgs::msg::PoseStamped approach_place_pose = place_pose;
+  approach_place_pose.pose.position.x = approach_vector.x();
+  approach_place_pose.pose.position.y = approach_vector.y();
+  approach_place_pose.pose.position.z = approach_vector.z();
+
+  // create retreat pose
+  auto retreat_vector = post_place_distance_ * post_place_cube_direction_;
+  geometry_msgs::msg::PoseStamped retreat_place_pose = place_pose;
+  retreat_place_pose.pose.position.x = retreat_vector.x();
+  retreat_place_pose.pose.position.y = retreat_vector.y();
+  retreat_place_pose.pose.position.z = retreat_vector.z();
+
+  return placeCube(cube_to_place, place_pose, approach_place_pose,
+                   retreat_place_pose, {target_cube.id()});
+}
+
+bool TowerOfHanoi::placeCube(
+    const Cube &cube_to_place,
+    const geometry_msgs::msg::PoseStamped &place_pose,
+    const geometry_msgs::msg::PoseStamped &approach_place_pose,
+    const geometry_msgs::msg::PoseStamped &retreat_place_pose,
+    const std::vector<std::string> &allow_collisions) {
+  auto place_frame = place_pose.header.frame_id;
+  removeVisualizedPoses();
+  visualizePose(place_pose, place_frame + "_place");
+
+  visualizePose(approach_place_pose, place_frame + "_approach_place");
+  if (!moveOmpl(approach_place_pose)) {
+    RCLCPP_ERROR(get_logger(), "Failed to move to approach place pose '%s'.",
+                 place_frame.c_str());
+    return false;
+  }
+
+  // update collisions
+  // extend with the object with place on given in allowd_collisions
+  if (!updateAllowedCollision(
+          cube_to_place, allow_collisions, {},
+          rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::MERGE)) {
+    RCLCPP_ERROR(get_logger(),
+                 "Failed to updated allowed collisions for obj '%s'.",
+                 cube_to_place.id().c_str());
+    return false;
+  }
+
+  if (!moveLin(place_pose)) {
+    RCLCPP_ERROR(get_logger(), "Failed to move to place point '%s'.",
+                 place_frame.c_str());
+    return false;
+  }
+
+  if (!openGripper()) {
+    RCLCPP_ERROR(get_logger(), "Failed to open gripper.");
+    return false;
+  }
+
+  if (!detachObjectFromGripper(cube_to_place.id())) {
+    RCLCPP_ERROR(get_logger(), "Failed to detach object '%s'.",
+                 cube_to_place.id().c_str());
+    return false;
+  }
+
+  visualizePose(retreat_place_pose, place_frame + "_retreat_place");
+  if (!moveLin(retreat_place_pose)) {
+    RCLCPP_ERROR(get_logger(), "Failed to move to retreat place pose '%s'.",
+                 place_frame.c_str());
+    return false;
+  }
+
+  return true;
+}
+
+bool TowerOfHanoi::moveLocationOmpl(const Location &location, double offset) {
+  geometry_msgs::msg::PoseStamped goal_pose{};
+  try {
+    goal_pose.header.frame_id = place_locations_.at(location);
+  } catch (const std::out_of_range &e) {
+    RCLCPP_ERROR(get_logger(), "Invalid location specified.");
+    return false;
+  }
+  // rotation between place location and orientation of cubes
+  goal_pose.pose.position.z = offset;
+  goal_pose.pose.orientation = tf2::toMsg(rot_place_to_cube_);
+
+  return moveOmpl(goal_pose);
+}
+
+bool TowerOfHanoi::moveLocationLin(const Location &location, double offset) {
+  geometry_msgs::msg::PoseStamped goal_pose{};
+  try {
+    goal_pose.header.frame_id = place_locations_.at(location);
+  } catch (const std::out_of_range &e) {
+    RCLCPP_ERROR(get_logger(), "Invalid location specified.");
+    return false;
+  }
+  // rotation between place location and orientation of cubes
+  goal_pose.pose.position.z = offset;
+  goal_pose.pose.orientation = tf2::toMsg(rot_place_to_cube_);
+
+  return moveLin(goal_pose);
+}
+
+bool TowerOfHanoi::moveOmpl(const geometry_msgs::msg::PoseStamped &pose) {
+  if (!move_group_) {
+    RCLCPP_ERROR(get_logger(), "Move group interface not initialized.");
+    return false;
+  }
+  configurePlannerOmpl(*move_group_);
+  move_group_->setPoseTarget(pose);
+  std::string target = pose.header.frame_id;
+  visualizePose(pose, target + "_pose");
+  return planAndMove(target);
+}
+
+bool TowerOfHanoi::moveLin(const geometry_msgs::msg::PoseStamped &pose) {
+  if (!move_group_) {
+    RCLCPP_ERROR(get_logger(), "Move group interface not initialized.");
+    return false;
+  }
+  configurePlannerPilzLin(*move_group_);
+  move_group_->setPoseTarget(pose);
+  std::string target = pose.header.frame_id;
+  visualizePose(pose, target + "_pose");
+  return planAndMove(target);
+}
+
+bool TowerOfHanoi::planAndMove(std::string target) {
+  if (!move_group_) {
+    RCLCPP_ERROR(
+        get_logger(),
+        "Move group interface not initialized. Call setMoveGroup() first.");
+    return false;
+  }
+  // plan
+  moveit::planning_interface::MoveGroupInterface::Plan my_plan;
+  RCLCPP_INFO(get_logger(), "Planning to target: '%s'.", target.c_str());
+  auto plan_result = move_group_->plan(my_plan);
+  if (plan_result != moveit::core::MoveItErrorCode::SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Planning failed for target '%s' Code: %d",
+                 target.c_str(), plan_result.val);
+    return false;
+  }
+
+  RCLCPP_INFO(get_logger(), "Plan found for target '%s', executing...",
+              target.c_str());
+
+  moveit::core::MoveItErrorCode move_result;
+  move_result = move_group_->execute(my_plan);
+  if (move_result != moveit::core::MoveItErrorCode::SUCCESS) {
+    RCLCPP_ERROR(get_logger(), "Execution failed for target '%s' Code: %d",
+                 target.c_str(), move_result.val);
+    return false;
+  }
+  RCLCPP_INFO(get_logger(), "Successfully moved to target '%s'",
+              target.c_str());
+
+  return true;
+}
+
+bool TowerOfHanoi::sendGripperCommand(double pos, double effort) {
+  if (!gripper_client_->wait_for_action_server(std::chrono::seconds(2))) {
+    RCLCPP_ERROR(get_logger(), "Gripper action server not available.");
+    return false;
+  }
+
+  ParallelGripperCommand::Goal goal;
+  goal.command.position = {pos};
+  goal.command.effort = {effort};
+
+  rclcpp_action::Client<ParallelGripperCommand>::SendGoalOptions options;
+
+  // Feedback
+  options.feedback_callback = [this](auto /*goal_handle*/,
+                                     const auto feedback) {
+    const auto &state = feedback->state;
+    for (size_t i = 0; i < state.name.size(); ++i) {
+      const double pos = (i < state.position.size()) ? state.position[i] : NAN;
+      const double vel = (i < state.velocity.size()) ? state.velocity[i] : NAN;
+      const double eff = (i < state.effort.size()) ? state.effort[i] : NAN;
+
+      RCLCPP_INFO(get_logger(), "Joint '%s': { pos=%f, vel=%f, eff=%f }",
+                  state.name[i].c_str(), pos, vel, eff);
+    }
+  };
+
+  // Send goal
+  auto goal_handle_future = gripper_client_->async_send_goal(goal, options);
+
+  auto goal_accepted = goal_handle_future.wait_for(std::chrono::seconds(5));
+  if (goal_accepted != std::future_status::ready) {
+    RCLCPP_ERROR(get_logger(), "Sending of gripper goal timed out.");
+    return false;
+  }
+
+  auto goal_handle = goal_handle_future.get();
+  if (!goal_handle) {
+    RCLCPP_ERROR(get_logger(), "Gripper goal was rejected.");
+    return false; // goal was rejected
+  }
+
+  // Get result and wait until gripper finishes
+  auto result_future = gripper_client_->async_get_result(goal_handle);
+  auto result_accepted = result_future.wait_for(std::chrono::seconds(10));
+  if (result_accepted != std::future_status::ready) {
+    gripper_client_->async_cancel_goal(goal_handle);
+    RCLCPP_ERROR(get_logger(), "Failed to get gripper result, cancel goal.");
+    return false;
+  }
+
+  // check teh result code and handle accordingly
+  auto wrapped_result = result_future.get();
+  switch (wrapped_result.code) {
+  case rclcpp_action::ResultCode::SUCCEEDED:
+    RCLCPP_INFO(get_logger(), "Gripper action succeeded.");
+    break;
+  case rclcpp_action::ResultCode::ABORTED:
+    RCLCPP_ERROR(get_logger(), "Gripper action aborted.");
+    return false;
+  case rclcpp_action::ResultCode::CANCELED:
+    RCLCPP_ERROR(get_logger(), "Gripper action canceled.");
+    return false;
+  default:
+    RCLCPP_ERROR(get_logger(), "Unknown result code.");
+    return false;
+  }
+  // sleep before returning result to give gripper
+  // time to settle in goal state
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+  // get the actual result message
+  auto result = wrapped_result.result.get();
+  // we should also handle stalling or if it reached
+  return result->reached_goal || result->stalled;
 }
 
 } // namespace tower_of_hanoi
@@ -301,14 +706,16 @@ int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor exec(
       rclcpp::ExecutorOptions(), 0, false, std::chrono::milliseconds(250));
-  auto node = std::make_shared<tower_of_hanoi::TowerOfHanoi>();
-  exec.add_node(node);
-  auto spin_thread = std::make_unique<std::thread>([&exec, &node]() {
-    exec.spin();
-    exec.remove_node(node);
-  });
+  auto transform_manager_node =
+      std::make_shared<tower_of_hanoi::TransformManager>();
+  exec.add_node(transform_manager_node);
+  auto tower_of_hanoi_node = std::make_shared<tower_of_hanoi::TowerOfHanoi>(
+      transform_manager_node, "world");
+  exec.add_node(tower_of_hanoi_node);
+  auto spin_thread = std::make_unique<std::thread>([&exec]() { exec.spin(); });
 
-  node->buildTowerOfHanoi();
+  tower_of_hanoi_node->configureMoveit("manipulator_robotiq_85");
+  tower_of_hanoi_node->buildTowerOfHanoi();
 
   // we are finished so we shutdown and wait for the spin_thread to shutdown
   rclcpp::shutdown();

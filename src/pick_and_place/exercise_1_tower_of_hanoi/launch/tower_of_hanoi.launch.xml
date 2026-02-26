@@ -1,6 +1,6 @@
 <launch>
   <!-- Launch arguments -->
-  <arg name="mock_hardware" default="true" description="Use mock hardware"/>
+  <arg name="use_fake_hardware" default="true" description="Use mock hardware"/>
   <arg name="gripper" default="robotiq_2f_85" description="Gripper type"/>
   <arg name="dof" default="7" description="Degrees of freedom"/>
   <arg name="use_sim_time" default="false" description="Use simulation time"/>
@@ -47,7 +47,7 @@
   <!-- Load robot description -->
   <let name="robot_description_content"
        value="$(command '$(find-exec xacro) $(var description_file_path) \
-                use_fake_hardware:=$(var mock_hardware) \
+                use_fake_hardware:=$(var use_fake_hardware) \
                 gripper:=$(var gripper) \
                 dof:=$(var dof)')"/>
 

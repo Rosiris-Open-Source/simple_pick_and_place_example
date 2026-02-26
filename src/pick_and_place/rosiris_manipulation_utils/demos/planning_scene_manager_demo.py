@@ -42,7 +42,7 @@ from rosiris_manipulation_interfaces.msg import (
 )
 
 
-BOX_ID = "box"
+BOX_ID = "box_458398093"
 FRAME = "world"
 EEF_LINK = "end_effector_link"
 
