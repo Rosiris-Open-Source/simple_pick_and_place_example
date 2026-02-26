@@ -10,6 +10,7 @@ set(PACKAGE_INCLUDE_DEPS
   control_msgs
   generate_parameter_library
   geometry_msgs
+  moveit_ros_planning
   moveit_ros_planning_interface
   moveit_visual_tools
   rclcpp

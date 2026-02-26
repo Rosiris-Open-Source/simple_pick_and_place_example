@@ -146,7 +146,7 @@ void TowerOfHanoi::configurePlannerOmpl(
   // -- Set Planning Parameters --
   move_group.setPlanningTime(5.0); // Give it time to find a solution
   move_group.setNumPlanningAttempts(10);
-  move_group.setGoalTolerance(0.01);
+  move_group.setGoalTolerance(0.1);
 
   // -- Set Tolerances --
   // Position tolerance in meters (e.g., 0.001 = 1mm)
@@ -172,7 +172,7 @@ void TowerOfHanoi::configurePlannerPilzLin(
   // -- Set Planning Parameters --
   move_group.setPlanningTime(5.0); // Give it time to find a solution
   move_group.setNumPlanningAttempts(10);
-  move_group.setGoalTolerance(0.01);
+  move_group.setGoalTolerance(0.1);
 
   // -- Set Tolerances --
   // Position tolerance in meters (e.g., 0.001 = 1mm)
@@ -625,7 +625,7 @@ bool TowerOfHanoi::planAndMove(std::string target) {
   return true;
 }
 
-bool TowerOfHanoi::sendGripperCommand(double pos, double effort) {
+bool TowerOfHanoi::sendGripperCommand(double pos) {
   if (!gripper_client_->wait_for_action_server(std::chrono::seconds(2))) {
     RCLCPP_ERROR(get_logger(), "Gripper action server not available.");
     return false;
@@ -633,7 +633,6 @@ bool TowerOfHanoi::sendGripperCommand(double pos, double effort) {
 
   ParallelGripperCommand::Goal goal;
   goal.command.position = {pos};
-  goal.command.effort = {effort};
 
   rclcpp_action::Client<ParallelGripperCommand>::SendGoalOptions options;
 
@@ -691,9 +690,7 @@ bool TowerOfHanoi::sendGripperCommand(double pos, double effort) {
     RCLCPP_ERROR(get_logger(), "Unknown result code.");
     return false;
   }
-  // sleep before returning result to give gripper
-  // time to settle in goal state
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
   // get the actual result message
   auto result = wrapped_result.result.get();
   // we should also handle stalling or if it reached

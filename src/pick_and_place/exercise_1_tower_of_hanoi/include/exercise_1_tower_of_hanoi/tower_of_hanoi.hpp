@@ -137,9 +137,9 @@ protected:
   bool moveLin(const geometry_msgs::msg::PoseStamped &pose);
   bool planAndMove(std::string target);
 
-  bool openGripper() { return sendGripperCommand(0.0, 0.1); }
-  bool closeGripper() { return sendGripperCommand(0.8, 0.5); }
-  bool sendGripperCommand(double pos, double effort);
+  bool openGripper() { return sendGripperCommand(0.01); }
+  bool closeGripper() { return sendGripperCommand(0.75); }
+  bool sendGripperCommand(double pos);
 
   bool attachObjectToGripper(const std::string &obj_to_attach);
   bool detachObjectFromGripper(const std::string &obj_to_detach);

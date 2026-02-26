@@ -3,6 +3,7 @@
     pilz:
       planning_plugins: [pilz_industrial_motion_planner/CommandPlanner]
       default_planner_config: "PTP"
+      fix_start_state: true
   
       request_adapters:
         - default_planning_request_adapters/ResolveConstraintFrames

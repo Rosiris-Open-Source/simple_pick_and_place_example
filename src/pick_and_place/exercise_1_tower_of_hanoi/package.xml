@@ -13,6 +13,7 @@
   <depend>control_msgs</depend>
   <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
+  <depend>moveit_ros_planning</depend>
   <depend>moveit_ros_planning_interface</depend>
   <depend>moveit_visual_tools</depend>
   <depend>rclcpp</depend>
