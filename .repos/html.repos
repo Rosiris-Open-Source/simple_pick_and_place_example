@@ -27,6 +27,18 @@ repositories:
     type: git
     url: https://github.com/PickNikRobotics/ros2_robotiq_gripper.git
     version: main
+  src/rosiris_common_description:
+    type: git
+    url: git@github.com:Rosiris-Open-Source/rosiris_common_description.git
+    version: main
+  src/rosiris_manipulation:
+    type: git
+    url: git@github.com:Rosiris-Open-Source/rosiris_manipulation.git
+    version: main
+  src/rosiris_transform_tools:
+    type: git
+    url: git@github.com:Rosiris-Open-Source/rosiris_transform_tools.git
+    version: main
   src/serial:
     type: git
     url: https://github.com/tylerjw/serial.git

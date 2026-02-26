@@ -11,6 +11,9 @@ src/ros2_control
 src/ros2_controllers
 src/ros2_kortex
 src/ros2_robotiq_gripper
+src/rosiris_common_description
+src/rosiris_manipulation
+src/rosiris_transform_tools
 src/serial
 src/srdfdom
 src/Universal_Robots_ROS2_Description

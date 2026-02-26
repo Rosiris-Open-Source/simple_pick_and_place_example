@@ -1,5 +1,0 @@
-string collision_object_id
-string attach_to_link
-string[] allowed_touch_links
----
-ServiceResult result

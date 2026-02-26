@@ -1,5 +1,0 @@
-string detach_from_link
-string collision_object_id 
-string[] disallowed_touch_links
----
-ServiceResult result

@@ -1,2 +1,0 @@
-string touch_link
-bool collision_allowed

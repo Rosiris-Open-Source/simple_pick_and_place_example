@@ -1,5 +1,0 @@
-CollisionObjectPoseUpdate[] collision_object_pose_updates
----
-ServiceResult result
-string[] moved_object_ids
-string[] not_moved_object_ids
