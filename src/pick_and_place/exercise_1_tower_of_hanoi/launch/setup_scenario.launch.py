@@ -4,7 +4,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-            package="rosiris_manipulation_utils", 
+            package="scene_management", 
             executable="scenario_manager.py",    
             name="scenario_manager",
             output="screen",

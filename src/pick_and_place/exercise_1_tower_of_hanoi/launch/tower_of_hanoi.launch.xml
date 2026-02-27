@@ -111,7 +111,7 @@
   </node>
 
   <!-- Planning Scene Manager -->
-  <node pkg="rosiris_manipulation_utils" exec="planning_scene_manager_node" name="planning_scene_manager" output="screen">
+  <node pkg="scene_management" exec="planning_scene_manager_node" name="planning_scene_manager" output="screen">
     <param name="use_sim_time" value="$(var use_sim_time)"/>
   </node>
 
