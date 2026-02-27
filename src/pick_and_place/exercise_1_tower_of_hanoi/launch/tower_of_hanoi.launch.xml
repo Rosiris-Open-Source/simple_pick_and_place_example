@@ -98,16 +98,12 @@
 
   <!-- RViz2 -->
   <node pkg="rviz2" exec="rviz2" name="rviz2" output="log" args="-d $(var rviz_file_path)">
-    <param name="robot_description" value="$(var robot_description_content)"/>
-    <param name="robot_description_semantic" value="$(var robot_srdf_content)"/>
-    <param from="$(var joint_limits_file_path)"/>
-    <param from="$(var kinematics_file_path)"/>
-    <param from="$(var move_group_config_file_path)"/>
-    <param from="$(var moveit_controllers_file_path)"/>
-    <param from="$(var ompl_planning_file_path)"/>
-    <param from="$(var pilz_cartesian_limits_file_path)"/>
-    <param from="$(var pilz_planning_file_path)"/>
-    <param name="use_sim_time" value="$(var use_sim_time)"/>
+     <param name="robot_description" value="$(var robot_description_content)"/>
+     <param name="robot_description_semantic" value="$(var robot_srdf_content)"/>
+     <param from="$(var joint_limits_file_path)"/>
+     <param from="$(var kinematics_file_path)"/>
+     <param from="$(var pilz_cartesian_limits_file_path)"/>
+     <param name="use_sim_time" value="$(var use_sim_time)"/>
   </node>
 
   <!-- Planning Scene Manager -->
