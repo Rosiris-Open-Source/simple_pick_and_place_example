@@ -106,6 +106,7 @@ public:
         shared_from_this(),
         reference_frame_, // reference frame
         rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_->getRobotModel());
+    visual_tools_->setLifetime(0.0);
   }
 
   void buildTowerOfHanoi();
@@ -133,9 +134,9 @@ protected:
 
   bool moveLocationOmpl(const Location &location, double distance = 0.0);
   bool moveLocationLin(const Location &location, double distance = 0.0);
-  bool moveOmpl(const geometry_msgs::msg::PoseStamped &pose);
-  bool moveLin(const geometry_msgs::msg::PoseStamped &pose);
-  bool planAndMove(std::string target);
+  bool moveOmpl(const geometry_msgs::msg::PoseStamped &target_pose);
+  bool moveLin(const geometry_msgs::msg::PoseStamped &target_pose);
+  bool planAndMove(const geometry_msgs::msg::PoseStamped &target_pose);
 
   bool openGripper() { return sendGripperCommand(0.01); }
   bool closeGripper() { return sendGripperCommand(0.75); }

@@ -305,6 +305,7 @@ bool TowerOfHanoi::updateAllowedCollision(
 }
 
 bool TowerOfHanoi::homeRobot() {
+  RCLCPP_INFO(get_logger(), "%s():", __func__);
   auto move_group = moveit::planning_interface::MoveGroupInterface(
       shared_from_this(), "manipulator");
   configurePlannerOmpl(move_group);
@@ -314,32 +315,35 @@ bool TowerOfHanoi::homeRobot() {
   move_group.setNamedTarget(target);
 
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-  RCLCPP_INFO(get_logger(), "Planning to target: '%s'.", target.c_str());
+  RCLCPP_INFO(get_logger(), "%s(): Planning to target: '%s'.", __func__,
+              target.c_str());
 
   auto plan_result = move_group.plan(my_plan);
   if (plan_result != moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Planning failed for target '%s' Code: %d",
-                 target.c_str(), plan_result.val);
+    RCLCPP_ERROR(get_logger(), "%s():Planning failed for target '%s' Code: %d",
+                 __func__, target.c_str(), plan_result.val);
     return false;
   }
 
-  RCLCPP_INFO(get_logger(), "Plan found for target '%s', executing...",
-              target.c_str());
+  RCLCPP_INFO(get_logger(), "%s():Plan found for target '%s', executing...",
+              __func__, target.c_str());
 
   moveit::core::MoveItErrorCode move_result;
   move_result = move_group.execute(my_plan);
   if (move_result != moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Execution failed for target '%s' Code: %d",
-                 target.c_str(), move_result.val);
+    RCLCPP_ERROR(get_logger(), "%s():Execution failed for target '%s' Code: %d",
+                 __func__, target.c_str(), move_result.val);
     return false;
   }
-  RCLCPP_INFO(get_logger(), "Successfully moved to target '%s'",
+  RCLCPP_INFO(get_logger(), "%s():Successfully moved to target '%s'", __func__,
               target.c_str());
 
   return true;
 }
 
 bool TowerOfHanoi::pickCube(const Cube &cube) {
+  const auto cube_name = cube.id().c_str();
+  RCLCPP_INFO(get_logger(), "%s(%s)", __func__, cube_name);
   removeVisualizedPoses();
   auto grasp_frame = cube.grasp_point();
   geometry_msgs::msg::PoseStamped grasp_pose{};
@@ -356,30 +360,33 @@ bool TowerOfHanoi::pickCube(const Cube &cube) {
 
   visualizePose(approach_grasp_pose, grasp_frame + "_approach_grasp");
   if (!moveOmpl(approach_grasp_pose)) {
-    RCLCPP_ERROR(get_logger(), "Failed to move to approach grasp pose '%s'.",
-                 grasp_frame.c_str());
+    RCLCPP_ERROR(get_logger(),
+                 "%s(%s): Failed to move to approach grasp pose '%s'.",
+                 __func__, cube_name, grasp_frame.c_str());
     return false;
   }
 
   if (!openGripper()) {
-    RCLCPP_ERROR(get_logger(), "Failed to open gripper.");
+    RCLCPP_ERROR(get_logger(), "%s(%s): Failed to open gripper.", __func__,
+                 cube_name);
     return false;
   }
 
   if (!moveLin(grasp_pose)) {
-    RCLCPP_ERROR(get_logger(), "Failed to move to grasp point '%s'.",
-                 grasp_frame.c_str());
+    RCLCPP_ERROR(get_logger(), "%s(%s): Failed to move to grasp point '%s'.",
+                 __func__, cube_name, grasp_frame.c_str());
     return false;
   }
 
   if (!closeGripper()) {
-    RCLCPP_ERROR(get_logger(), "Failed to close gripper.");
+    RCLCPP_ERROR(get_logger(), "%s(%s): Failed to close gripper.", __func__,
+                 cube_name);
     return false;
   }
 
   if (!attachObjectToGripper(cube.id())) {
-    RCLCPP_ERROR(get_logger(), "Failed to attach object '%s'.",
-                 cube.id().c_str());
+    RCLCPP_ERROR(get_logger(), "%s(%s): Failed to attach object '%s'.",
+                 __func__, cube_name, cube_name);
     return false;
   }
 
@@ -391,8 +398,9 @@ bool TowerOfHanoi::pickCube(const Cube &cube) {
 
   visualizePose(retreat_grasp_pose, grasp_frame + "_retreat_grasp");
   if (!moveLin(retreat_grasp_pose)) {
-    RCLCPP_ERROR(get_logger(), "Failed to move to retreat grasp pose '%s'.",
-                 grasp_frame.c_str());
+    RCLCPP_ERROR(get_logger(),
+                 "%s(%s): Failed to move to retreat grasp pose '%s'.", __func__,
+                 cube_name, grasp_frame.c_str());
     return false;
   }
 
@@ -407,8 +415,8 @@ bool TowerOfHanoi::pickCube(const Cube &cube) {
           rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::
               REPLACE)) {
     RCLCPP_ERROR(get_logger(),
-                 "Failed to updated allowed collisions for obj '%s'.",
-                 cube.id().c_str());
+                 "%s(%s): Failed to updated allowed collisions for obj '%s'.",
+                 __func__, cube_name, cube.id().c_str());
     return false;
   }
 
@@ -417,13 +425,20 @@ bool TowerOfHanoi::pickCube(const Cube &cube) {
 
 bool TowerOfHanoi::placeCubeAtLocation(const Cube &cube_to_place,
                                        const Location &location) {
+  const auto cube_name = cube_to_place.id().c_str();
+  std::string location_name;
   geometry_msgs::msg::PoseStamped place_pose{};
   try {
-    place_pose.header.frame_id = place_locations_.at(location);
+    location_name = place_locations_.at(location);
+    place_pose.header.frame_id = location_name;
   } catch (const std::out_of_range &e) {
-    RCLCPP_ERROR(get_logger(), "Invalid location specified.");
+    RCLCPP_ERROR(get_logger(), "%s(%s, %i): Invalid location specified.",
+                 __func__, cube_name, static_cast<int>(location));
     return false;
   }
+  RCLCPP_INFO(get_logger(), "%s(%s, %s)", __func__, cube_name,
+              location_name.c_str());
+
   place_pose.pose.position.z =
       cube_to_place.dimension() / 2.0 + cube_to_place.grasp_pose_offset();
   place_pose.pose.orientation = tf2::toMsg(rot_place_to_cube_);
@@ -447,6 +462,8 @@ bool TowerOfHanoi::placeCubeAtLocation(const Cube &cube_to_place,
 
 bool TowerOfHanoi::placeCubeOnCube(const Cube &cube_to_place,
                                    const Cube &target_cube) {
+  RCLCPP_INFO(get_logger(), "%s(%s, %s)", __func__, cube_to_place.id().c_str(),
+              target_cube.id().c_str());
   geometry_msgs::msg::PoseStamped place_pose{};
   place_pose.header.frame_id = target_cube.ref_frame();
   // Compute placement height so the bottom face of cube_to_place
@@ -489,13 +506,15 @@ bool TowerOfHanoi::placeCube(
     const geometry_msgs::msg::PoseStamped &approach_place_pose,
     const geometry_msgs::msg::PoseStamped &retreat_place_pose,
     const std::vector<std::string> &allow_collisions) {
+  RCLCPP_INFO(get_logger(), "%s()", __func__);
   auto place_frame = place_pose.header.frame_id;
   removeVisualizedPoses();
   visualizePose(place_pose, place_frame + "_place");
-
   visualizePose(approach_place_pose, place_frame + "_approach_place");
+
   if (!moveOmpl(approach_place_pose)) {
-    RCLCPP_ERROR(get_logger(), "Failed to move to approach place pose '%s'.",
+    RCLCPP_ERROR(get_logger(),
+                 "%s(): Failed to move to approach place pose '%s'.", __func__,
                  place_frame.c_str());
     return false;
   }
@@ -506,31 +525,32 @@ bool TowerOfHanoi::placeCube(
           cube_to_place, allow_collisions, {},
           rosiris_manipulation_interfaces::msg::CollisionMatrixUpdate::MERGE)) {
     RCLCPP_ERROR(get_logger(),
-                 "Failed to updated allowed collisions for obj '%s'.",
-                 cube_to_place.id().c_str());
+                 "%s(): Failed to updated allowed collisions for obj '%s'.",
+                 __func__, cube_to_place.id().c_str());
     return false;
   }
 
   if (!moveLin(place_pose)) {
-    RCLCPP_ERROR(get_logger(), "Failed to move to place point '%s'.",
-                 place_frame.c_str());
+    RCLCPP_ERROR(get_logger(), "%s(): Failed to move to place point '%s'.",
+                 __func__, place_frame.c_str());
     return false;
   }
 
   if (!openGripper()) {
-    RCLCPP_ERROR(get_logger(), "Failed to open gripper.");
+    RCLCPP_ERROR(get_logger(), "%s(): Failed to open gripper.", __func__);
     return false;
   }
 
   if (!detachObjectFromGripper(cube_to_place.id())) {
-    RCLCPP_ERROR(get_logger(), "Failed to detach object '%s'.",
+    RCLCPP_ERROR(get_logger(), "%s(): Failed to detach object '%s'.", __func__,
                  cube_to_place.id().c_str());
     return false;
   }
 
   visualizePose(retreat_place_pose, place_frame + "_retreat_place");
   if (!moveLin(retreat_place_pose)) {
-    RCLCPP_ERROR(get_logger(), "Failed to move to retreat place pose '%s'.",
+    RCLCPP_ERROR(get_logger(),
+                 "%s(): Failed to move to retreat place pose '%s'.", __func__,
                  place_frame.c_str());
     return false;
   }
@@ -539,11 +559,14 @@ bool TowerOfHanoi::placeCube(
 }
 
 bool TowerOfHanoi::moveLocationOmpl(const Location &location, double offset) {
+  RCLCPP_INFO(get_logger(), "%s(%i, %f)", __func__, static_cast<int>(location),
+              offset);
   geometry_msgs::msg::PoseStamped goal_pose{};
   try {
     goal_pose.header.frame_id = place_locations_.at(location);
   } catch (const std::out_of_range &e) {
-    RCLCPP_ERROR(get_logger(), "Invalid location specified.");
+    RCLCPP_ERROR(get_logger(), "%s(%i, %f):Invalid location specified.",
+                 __func__, static_cast<int>(location), offset);
     return false;
   }
   // rotation between place location and orientation of cubes
@@ -554,11 +577,14 @@ bool TowerOfHanoi::moveLocationOmpl(const Location &location, double offset) {
 }
 
 bool TowerOfHanoi::moveLocationLin(const Location &location, double offset) {
+  RCLCPP_INFO(get_logger(), "%s(%i, %f)", __func__, static_cast<int>(location),
+              offset);
   geometry_msgs::msg::PoseStamped goal_pose{};
   try {
     goal_pose.header.frame_id = place_locations_.at(location);
   } catch (const std::out_of_range &e) {
-    RCLCPP_ERROR(get_logger(), "Invalid location specified.");
+    RCLCPP_ERROR(get_logger(), "%s(%i, %f): Invalid location specified.",
+                 __func__, static_cast<int>(location), offset);
     return false;
   }
   // rotation between place location and orientation of cubes
@@ -568,66 +594,78 @@ bool TowerOfHanoi::moveLocationLin(const Location &location, double offset) {
   return moveLin(goal_pose);
 }
 
-bool TowerOfHanoi::moveOmpl(const geometry_msgs::msg::PoseStamped &pose) {
+bool TowerOfHanoi::moveOmpl(
+    const geometry_msgs::msg::PoseStamped &target_pose) {
+  const auto target_pose_frame = target_pose.header.frame_id.c_str();
+  RCLCPP_INFO(get_logger(), "%s(%s)", __func__, target_pose_frame);
   if (!move_group_) {
-    RCLCPP_ERROR(get_logger(), "Move group interface not initialized.");
+    RCLCPP_ERROR(get_logger(), "%s(%s): Move group interface not initialized.",
+                 __func__, target_pose_frame);
     return false;
   }
   configurePlannerOmpl(*move_group_);
-  move_group_->setPoseTarget(pose);
-  std::string target = pose.header.frame_id;
-  visualizePose(pose, target + "_pose");
-  return planAndMove(target);
+  return planAndMove(target_pose);
 }
 
-bool TowerOfHanoi::moveLin(const geometry_msgs::msg::PoseStamped &pose) {
+bool TowerOfHanoi::moveLin(const geometry_msgs::msg::PoseStamped &target_pose) {
+  const auto target_pose_frame = target_pose.header.frame_id.c_str();
+  RCLCPP_INFO(get_logger(), "%s(%s)", __func__, target_pose_frame);
   if (!move_group_) {
-    RCLCPP_ERROR(get_logger(), "Move group interface not initialized.");
+    RCLCPP_ERROR(get_logger(), "%s(%s): Move group interface not initialized.",
+                 __func__, target_pose_frame);
     return false;
   }
   configurePlannerPilzLin(*move_group_);
-  move_group_->setPoseTarget(pose);
-  std::string target = pose.header.frame_id;
-  visualizePose(pose, target + "_pose");
-  return planAndMove(target);
+  return planAndMove(target_pose);
 }
 
-bool TowerOfHanoi::planAndMove(std::string target) {
+bool TowerOfHanoi::planAndMove(
+    const geometry_msgs::msg::PoseStamped &target_pose) {
+  const auto target_pose_frame = target_pose.header.frame_id.c_str();
+  RCLCPP_INFO(get_logger(), "%s(%s)", __func__, target_pose_frame);
   if (!move_group_) {
-    RCLCPP_ERROR(
-        get_logger(),
-        "Move group interface not initialized. Call setMoveGroup() first.");
+    RCLCPP_ERROR(get_logger(),
+                 "%s(%s): Move group interface not initialized. "
+                 "Call setMoveGroup() first.",
+                 __func__, target_pose_frame);
     return false;
   }
+  move_group_->clearPoseTargets();
+  move_group_->setPoseTarget(target_pose);
+  visualizePose(target_pose, std::string(target_pose_frame) + "_pose");
   // plan
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-  RCLCPP_INFO(get_logger(), "Planning to target: '%s'.", target.c_str());
+  RCLCPP_INFO(get_logger(), "%s(%s): Planning to target: '%s'.", __func__,
+              target_pose_frame, target_pose_frame);
   auto plan_result = move_group_->plan(my_plan);
   if (plan_result != moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Planning failed for target '%s' Code: %d",
-                 target.c_str(), plan_result.val);
+    RCLCPP_ERROR(get_logger(),
+                 "%s(%s): Planning failed for target '%s' Code: %d", __func__,
+                 target_pose_frame, target_pose_frame, plan_result.val);
     return false;
   }
 
-  RCLCPP_INFO(get_logger(), "Plan found for target '%s', executing...",
-              target.c_str());
+  RCLCPP_INFO(get_logger(), "%s(%s): Plan found for target '%s', executing...",
+              __func__, target_pose_frame, target_pose_frame);
 
   moveit::core::MoveItErrorCode move_result;
   move_result = move_group_->execute(my_plan);
   if (move_result != moveit::core::MoveItErrorCode::SUCCESS) {
-    RCLCPP_ERROR(get_logger(), "Execution failed for target '%s' Code: %d",
-                 target.c_str(), move_result.val);
+    RCLCPP_ERROR(get_logger(),
+                 "%s(%s): Execution failed for target '%s' Code: %d", __func__,
+                 target_pose_frame, target_pose_frame, move_result.val);
     return false;
   }
-  RCLCPP_INFO(get_logger(), "Successfully moved to target '%s'",
-              target.c_str());
+  RCLCPP_INFO(get_logger(), "%s(%s): Successfully moved to target '%s'",
+              __func__, target_pose_frame, target_pose_frame);
 
   return true;
 }
 
 bool TowerOfHanoi::sendGripperCommand(double pos) {
   if (!gripper_client_->wait_for_action_server(std::chrono::seconds(2))) {
-    RCLCPP_ERROR(get_logger(), "Gripper action server not available.");
+    RCLCPP_ERROR(get_logger(), "%s(%f): Gripper action server not available.",
+                 __func__, pos);
     return false;
   }
 
@@ -645,8 +683,9 @@ bool TowerOfHanoi::sendGripperCommand(double pos) {
       const double vel = (i < state.velocity.size()) ? state.velocity[i] : NAN;
       const double eff = (i < state.effort.size()) ? state.effort[i] : NAN;
 
-      RCLCPP_INFO(get_logger(), "Joint '%s': { pos=%f, vel=%f, eff=%f }",
-                  state.name[i].c_str(), pos, vel, eff);
+      RCLCPP_INFO(get_logger(),
+                  "%s(%f): Joint '%s': { pos=%f, vel=%f, eff=%f }", __func__,
+                  pos, state.name[i].c_str(), pos, vel, eff);
     }
   };
 
@@ -655,13 +694,15 @@ bool TowerOfHanoi::sendGripperCommand(double pos) {
 
   auto goal_accepted = goal_handle_future.wait_for(std::chrono::seconds(5));
   if (goal_accepted != std::future_status::ready) {
-    RCLCPP_ERROR(get_logger(), "Sending of gripper goal timed out.");
+    RCLCPP_ERROR(get_logger(), "%s(%f): Sending of gripper goal timed out.",
+                 __func__, pos);
     return false;
   }
 
   auto goal_handle = goal_handle_future.get();
   if (!goal_handle) {
-    RCLCPP_ERROR(get_logger(), "Gripper goal was rejected.");
+    RCLCPP_ERROR(get_logger(), "%s(%f): Gripper goal was rejected.", __func__,
+                 pos);
     return false; // goal was rejected
   }
 
@@ -670,7 +711,9 @@ bool TowerOfHanoi::sendGripperCommand(double pos) {
   auto result_accepted = result_future.wait_for(std::chrono::seconds(10));
   if (result_accepted != std::future_status::ready) {
     gripper_client_->async_cancel_goal(goal_handle);
-    RCLCPP_ERROR(get_logger(), "Failed to get gripper result, cancel goal.");
+    RCLCPP_ERROR(get_logger(),
+                 "%s(%f): Failed to get gripper result, cancel goal.", __func__,
+                 pos);
     return false;
   }
 
@@ -678,16 +721,19 @@ bool TowerOfHanoi::sendGripperCommand(double pos) {
   auto wrapped_result = result_future.get();
   switch (wrapped_result.code) {
   case rclcpp_action::ResultCode::SUCCEEDED:
-    RCLCPP_INFO(get_logger(), "Gripper action succeeded.");
+    RCLCPP_INFO(get_logger(), "G%s(%f): ripper action succeeded.", __func__,
+                pos);
     break;
   case rclcpp_action::ResultCode::ABORTED:
-    RCLCPP_ERROR(get_logger(), "Gripper action aborted.");
+    RCLCPP_ERROR(get_logger(), "%s(%f): Gripper action aborted.", __func__,
+                 pos);
     return false;
   case rclcpp_action::ResultCode::CANCELED:
-    RCLCPP_ERROR(get_logger(), "Gripper action canceled.");
+    RCLCPP_ERROR(get_logger(), "%s(%f): Gripper action canceled.", __func__,
+                 pos);
     return false;
   default:
-    RCLCPP_ERROR(get_logger(), "Unknown result code.");
+    RCLCPP_ERROR(get_logger(), "%s(%f): Unknown result code.", __func__, pos);
     return false;
   }
 
@@ -713,7 +759,6 @@ int main(int argc, char **argv) {
 
   tower_of_hanoi_node->configureMoveit("manipulator_robotiq_85");
   tower_of_hanoi_node->buildTowerOfHanoi();
-
   // we are finished so we shutdown and wait for the spin_thread to shutdown
   rclcpp::shutdown();
   spin_thread->join();
