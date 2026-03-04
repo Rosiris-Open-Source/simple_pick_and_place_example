@@ -53,7 +53,7 @@ install(TARGETS tower_of_hanoi
 )
 
 install(
-  DIRECTORY config description launch moveit_config_xml rviz
+  DIRECTORY description launch moveit_config_xml rviz
   DESTINATION share/${PROJECT_NAME}
 )
 

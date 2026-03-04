@@ -21,7 +21,7 @@ def generate_launch_description():
     # Load the robot configuration
     moveit_config : MoveItConfigs = (
         MoveItConfigsBuilder(
-            "tower_of_hanoi", package_name="exercise_1_tower_of_hanoi"
+            "moveit2", package_name="exercise_0_moveit2"
         )
         .robot_description(mappings=launch_arguments)
         .trajectory_execution(file_path="config/moveit_controllers.yaml")
@@ -29,7 +29,7 @@ def generate_launch_description():
             publish_robot_description=True, publish_robot_description_semantic=True
         )
         .planning_pipelines(
-            pipelines=["ompl", "stomp", "pilz_industrial_motion_planner"]
+            pipelines=["ompl", "pilz_industrial_motion_planner"]
         )
         .to_moveit_configs()
     )
@@ -46,12 +46,12 @@ def generate_launch_description():
     # Get the path to the RViz configuration file
     rviz_config_arg = DeclareLaunchArgument(
         "rviz_config",
-        default_value="tower_of_hanoi.rviz",
+        default_value="moveit2.rviz",
         description="RViz configuration file for the tower of hanoi demo",
     )
     rviz_base = LaunchConfiguration("rviz_config")
     rviz_config = PathJoinSubstitution(
-        [FindPackageShare("exercise_1_tower_of_hanoi"), "rviz", rviz_base]
+        [FindPackageShare("exercise_0_moveit2"), "rviz", rviz_base]
     )
 
     # Launch RViz
@@ -80,7 +80,7 @@ def generate_launch_description():
 
     # ros2_control using mock hardware for trajectory execution
     ros2_controllers_path = os.path.join(
-        get_package_share_directory("exercise_1_tower_of_hanoi"),
+        get_package_share_directory("exercise_0_moveit2"),
         "config",
         "ros2_controllers.yaml",
     )
@@ -116,24 +116,15 @@ def generate_launch_description():
         arguments=["robotiq_gripper_controller", "-c", "/controller_manager"],
     )
 
-    scene_manager = Node(
-            package="scene_management", 
-            executable="planning_scene_manager_node",    
-            name="planning_scene_manager",
-            output="screen"                      
-        )
-
     return LaunchDescription(
         [
             rviz_config_arg,
             rviz_node,
-            static_tf,
             robot_state_publisher,
             run_move_group_node,
             ros2_control_node,
             joint_state_broadcaster_spawner,
             arm_controller_spawner,
             hand_controller_spawner,
-            scene_manager
         ]
     )
