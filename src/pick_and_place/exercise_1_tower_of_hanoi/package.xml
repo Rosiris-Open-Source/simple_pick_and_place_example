@@ -13,13 +13,14 @@
   <depend>control_msgs</depend>
   <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
-  <depend>moveit_ros_planning</depend>
   <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_ros_planning</depend>
   <depend>moveit_visual_tools</depend>
   <depend>rclcpp</depend>
   <depend>rosiris_manipulation_interfaces</depend>
   <depend>rviz_visual_tools</depend>
   <depend>tf2</depend>
+  <depend>transform_manager</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

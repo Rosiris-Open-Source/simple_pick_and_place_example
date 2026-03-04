@@ -17,6 +17,7 @@ set(PACKAGE_INCLUDE_DEPS
   rosiris_manipulation_interfaces
   rviz_visual_tools
   tf2
+  transform_manager
 )
 foreach(Dependency IN ITEMS ${PACKAGE_INCLUDE_DEPS})
   find_package(${Dependency} REQUIRED)
@@ -40,6 +41,7 @@ target_link_libraries(tower_of_hanoi
   moveit_visual_tools::moveit_visual_tools
   rclcpp::rclcpp
   rviz_visual_tools::rviz_visual_tools
+  transform_manager::transform_manager
   ${control_msgs_TARGETS}
   ${geometry_msgs_TARGETS}
   ${rosiris_manipulation_interfaces_TARGETS}

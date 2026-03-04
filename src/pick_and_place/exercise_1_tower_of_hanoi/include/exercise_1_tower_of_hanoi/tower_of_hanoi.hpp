@@ -20,51 +20,19 @@
 #include <string>
 
 #include <control_msgs/action/parallel_gripper_command.hpp>
-#include <exercise_1_tower_of_hanoi/tower_of_hanoi_parameters.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
 #include <moveit/planning_scene_interface/planning_scene_interface.hpp>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <rclcpp_action/rclcpp_action.hpp>
+
 #include <rosiris_manipulation_interfaces/msg/collision_matrix_update.hpp>
 #include <rosiris_manipulation_interfaces/srv/attach_collision_object.hpp>
 #include <rosiris_manipulation_interfaces/srv/detach_collision_object.hpp>
 #include <rosiris_manipulation_interfaces/srv/update_allowed_collisions.hpp>
+#include <transform_manager/transform_manager.hpp>
 
-// TransforManager
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/transform_listener.h>
+#include <exercise_1_tower_of_hanoi/tower_of_hanoi_parameters.hpp>
 namespace tower_of_hanoi {
-class TransformManager : public rclcpp::Node {
-public:
-  TransformManager(std::string node_name = "transform_manager",
-                   const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-      : Node(node_name, options), tf_buffer_(this->get_clock()),
-        tf_listener_(tf_buffer_) {
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
-
-    static_broadcaster_ =
-        std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
-  }
-
-  geometry_msgs::msg::PoseStamped
-  getPoseInFrame(const geometry_msgs::msg::PoseStamped &pose,
-                 const std::string &target_frame) {
-    return tf_buffer_.transform(pose, target_frame, tf2::durationFromSec(0.0));
-  }
-
-private:
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
-
-  tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener tf_listener_;
-};
-
 struct Cube {
   Cube(const std::string &move_group, const std::string &id,
        const std::string &grasp_point, double dimension,
@@ -92,10 +60,11 @@ enum class Location { LEFT, MIDDLE, RIGHT };
 
 class TowerOfHanoi : public rclcpp::Node {
 public:
-  TowerOfHanoi(std::shared_ptr<TransformManager> transform_manager,
-               std::string reference_frame = "world",
-               std::string node_name = "hanoi_grasp_node",
-               const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+  TowerOfHanoi(
+      std::shared_ptr<transform_manager::TransformManager> transform_manager,
+      std::string reference_frame = "world",
+      std::string node_name = "hanoi_grasp_node",
+      const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
   virtual ~TowerOfHanoi() = default;
 
   void configureMoveit(std::string move_group_name) {
@@ -106,7 +75,6 @@ public:
         shared_from_this(),
         reference_frame_, // reference frame
         rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_->getRobotModel());
-    visual_tools_->setLifetime(0.0);
   }
 
   void buildTowerOfHanoi();
@@ -189,7 +157,7 @@ protected:
       nullptr;
   std::unique_ptr<moveit_visual_tools::MoveItVisualTools> visual_tools_ =
       nullptr;
-  std::shared_ptr<TransformManager> transform_manager_;
+  std::shared_ptr<transform_manager::TransformManager> transform_manager_;
   // parameters
   std::unique_ptr<tower_of_hanoi::ParamListener> param_listener_;
   tower_of_hanoi::Params params_;

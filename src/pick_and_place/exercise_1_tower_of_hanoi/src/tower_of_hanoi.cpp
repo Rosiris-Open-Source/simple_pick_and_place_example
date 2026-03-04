@@ -14,9 +14,10 @@ using ParallelGripperCommand = control_msgs::action::ParallelGripperCommand;
 using GoalHandleGripper =
     rclcpp_action::ClientGoalHandle<ParallelGripperCommand>;
 
-TowerOfHanoi::TowerOfHanoi(std::shared_ptr<TransformManager> transform_manager,
-                           std::string reference_frame, std::string node_name,
-                           const rclcpp::NodeOptions &options)
+TowerOfHanoi::TowerOfHanoi(
+    std::shared_ptr<transform_manager::TransformManager> transform_manager,
+    std::string reference_frame, std::string node_name,
+    const rclcpp::NodeOptions &options)
     : Node(node_name, options), transform_manager_(transform_manager),
       reference_frame_(reference_frame) {
   getParameters();
@@ -750,7 +751,7 @@ int main(int argc, char **argv) {
   rclcpp::executors::MultiThreadedExecutor exec(
       rclcpp::ExecutorOptions(), 0, false, std::chrono::milliseconds(250));
   auto transform_manager_node =
-      std::make_shared<tower_of_hanoi::TransformManager>();
+      std::make_shared<transform_manager::TransformManager>();
   exec.add_node(transform_manager_node);
   auto tower_of_hanoi_node = std::make_shared<tower_of_hanoi::TowerOfHanoi>(
       transform_manager_node, "world");
