@@ -750,8 +750,12 @@ int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   rclcpp::executors::MultiThreadedExecutor exec(
       rclcpp::ExecutorOptions(), 0, false, std::chrono::milliseconds(250));
+
+  rclcpp::NodeOptions tf_mng_options = rclcpp::NodeOptions{};
+  tf_mng_options.arguments(
+      {"--ros-args", "-r", "__node:=tower_of_hanoi_tf_manager_private"});
   auto transform_manager_node =
-      std::make_shared<transform_manager::TransformManager>();
+      std::make_shared<transform_manager::TransformManager>(tf_mng_options);
   exec.add_node(transform_manager_node);
   auto tower_of_hanoi_node = std::make_shared<tower_of_hanoi::TowerOfHanoi>(
       transform_manager_node, "world");

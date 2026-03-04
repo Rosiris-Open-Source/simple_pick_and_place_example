@@ -12,7 +12,7 @@
         - "robotiq_85_right_finger_tip_link"
         - "robotiq_85_right_inner_knuckle_link"
 
-/**/transform_manager:
+/**/tower_of_hanoi_tf_manager_private:
   ros__parameters:
     dynamic_frames_publish_frequency: 25.0
     enable_services: False
