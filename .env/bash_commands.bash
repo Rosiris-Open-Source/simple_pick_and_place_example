@@ -73,3 +73,79 @@ cdwsb() {
 cdwsi() {
   cd $(setup_env_workspace_dir)/install
 }
+
+# Get PID of a ROS2 node by name
+ros2_get_node_pid() {
+    local node_name=""
+    local all=false
+
+    # parse flags
+    for arg in "$@"; do
+        case "$arg" in
+            --all) all=true ;;
+            *)     node_name="$arg" ;;
+        esac
+    done
+
+    if [[ "$all" == false && -z "$node_name" ]]; then
+        echo "Usage: ros2_node_pid <node_name>" >&2
+        echo "       ros2_node_pid --all" >&2
+        return 1
+    fi
+
+    local results
+    if [[ "$all" == true ]]; then
+        results=$(ps aux | grep '\-\-ros-args')
+    else
+        results=$(ps aux | grep '\-\-ros-args' | grep "$node_name")
+    fi
+
+    if [[ -z "$results" ]]; then
+        echo "No ROS2 processes found" >&2
+        return 1
+    fi
+
+    echo "$results" | awk '{
+        pid = $2
+        exe = $11
+        printf "PID: %6s [ %s ]\n", pid, exe
+    }'
+}
+
+# Kill a ROS2 node by name
+ros2_kill_node() {
+    local node_name="$1"
+    local signal="${2:-SIGINT}"
+
+    if [[ -z "$node_name" ]]; then
+        echo "Usage: ros2_kill_node <node_name> [SIGNAL]" >&2
+        return 1
+    fi
+
+    local pids
+    pids=$(ps aux | grep '\-\-ros-args' | grep "$node_name" | awk '{print $2}')
+
+    if [[ -z "$pids" ]]; then
+        echo "No ROS2 process found for: '$node_name'" >&2
+        return 1
+    fi
+
+    echo "Sending $signal to '$node_name' (PID(s): $pids)"
+    echo "$pids" | xargs kill -s "$signal"
+}
+
+# Kill ALL ROS2 nodes
+ros2_kill_all_nodes() {
+    local signal="${1:-SIGINT}"
+
+    local pids
+    pids=$(ps aux | grep '\-\-ros-args' | awk '{print $2}')
+
+    if [[ -z "$pids" ]]; then
+        echo "No ROS2 processes found" >&2
+        return 1
+    fi
+
+    echo "Sending $signal to all ROS2 nodes (PID(s): $pids)"
+    echo "$pids" | xargs kill -s "$signal"
+}
