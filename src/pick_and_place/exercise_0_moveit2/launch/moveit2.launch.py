@@ -69,7 +69,7 @@ def generate_launch_description():
         ],
     )
 
-    # Publish TF
+    # Publish robot description
     robot_state_publisher = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",

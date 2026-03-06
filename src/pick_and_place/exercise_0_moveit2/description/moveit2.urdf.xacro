@@ -25,6 +25,10 @@
     <xacro:arg name="use_internal_bus_gripper_comm" default="false" />
     <xacro:arg name="use_external_cable" default="false" />
 
+    <xacro:arg name="simulation_controllers" default="" />
+    <xacro:arg name="ros_namespace" default="" />
+
+
     <!-- initial position for simulations (Mock Hardware, Gazebo) -->
     <xacro:arg name="initial_positions_file" default="$(find kortex_description)/config/initial_positions.yaml"/>
     <!-- convert to property to use substitution in function -->
@@ -83,8 +87,19 @@
     
     <link name="robotiq_85_tip_link"/>
     <joint name="robotiq_85_tip_link_joint" type="fixed">
-        <parent link="robotiq_85_base_link"/>
+        <parent link="end_effector_link"/>
         <child link="robotiq_85_tip_link"/>
         <origin xyz="0 0 0.134722" rpy="0 0 0" />
     </joint>
+
+<gazebo reference="world">
+  </gazebo>
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(arg simulation_controllers)</parameters>
+      <ros>
+        <namespace>$(arg ros_namespace)</namespace>
+      </ros>
+    </plugin>
+  </gazebo>
 </robot>
