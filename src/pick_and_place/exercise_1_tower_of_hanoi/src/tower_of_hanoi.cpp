@@ -6,7 +6,6 @@
 #include <rosiris_manipulation_interfaces/msg/collision_entry.hpp>
 #include <rosiris_manipulation_interfaces/msg/service_result.hpp>
 #include <rviz_visual_tools/rviz_visual_tools.hpp>
-#include <tf2/LinearMath/Quaternion.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 namespace tower_of_hanoi {
 

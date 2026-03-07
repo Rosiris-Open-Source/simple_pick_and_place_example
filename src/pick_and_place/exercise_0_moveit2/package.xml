@@ -10,7 +10,18 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
 
-  <depend>rosiris_environment_description_common</depend>
+  <exec_depend>gz_ros2_control</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>ros_gz_interfaces</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>rosiris_environment_description_common</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>simulation_interfaces</exec_depend>
+  <exec_depend>urdf</exec_depend>
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

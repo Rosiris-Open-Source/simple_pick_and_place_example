@@ -20,7 +20,6 @@
   <depend>rosiris_environment_description_common</depend>
   <depend>rosiris_manipulation_interfaces</depend>
   <depend>rviz_visual_tools</depend>
-  <depend>tf2</depend>
   <depend>transform_manager</depend>
 
   <test_depend>ament_lint_auto</test_depend>

@@ -1,18 +1,18 @@
 import os
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, IfElseSubstitution
-from launch_ros.actions import Node, SetParameter
-from launch_ros.substitutions import FindPackageShare
-from ament_index_python.packages import get_package_share_directory
-from moveit_configs_utils import MoveItConfigsBuilder, MoveItConfigs
 
 from launch import LaunchDescription
+from launch import LaunchDescription
+from launch_ros.actions import Node, SetParameter
+from launch_ros.substitutions import FindPackageShare
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
+    OpaqueFunction
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from moveit_configs_utils import MoveItConfigsBuilder, MoveItConfigs
 
 def launch_setup(context, *args, **kwargs):
     gazebo_gui = LaunchConfiguration("gazebo_gui")
@@ -114,7 +114,7 @@ def launch_setup(context, *args, **kwargs):
         arguments=["robotiq_gripper_controller", "-c", "/controller_manager"],
     )
 
-        # GZ nodes
+    # GZ nodes
     gz_spawn_entity = Node(
         package="ros_gz_sim",
         executable="create",
@@ -129,16 +129,24 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
-    gz_launch_description = IncludeLaunchDescription(
+    gz_gui_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
         ),
+        condition=IfCondition(gazebo_gui),
         launch_arguments={
-            "gz_args": IfElseSubstitution(
-                gazebo_gui,
-                if_value=[" -r -v 4 ", world_file],
-                else_value=[" -s -r -v 4 ", world_file],
-            )
+            "gz_args": [" -g -v 4 ", world_file],
+        }.items(),
+    )
+
+    gz_server = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [FindPackageShare("ros_gz_sim"), "/launch/gz_server.launch.py"]
+        ),
+        launch_arguments={
+            "world_sdf_file": world_file,
+            "create_own_container": "True",
+            "use_composition": "True"
         }.items(),
     )
 
@@ -152,7 +160,6 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-
     return [
             SetParameter(name="use_sim_time", value=use_sim_time), # set use_sim_time globally
             rviz_config_arg,
@@ -163,8 +170,9 @@ def launch_setup(context, *args, **kwargs):
             arm_controller_spawner,
             hand_controller_spawner,
             gz_spawn_entity,
-            gz_launch_description,
+            gz_gui_launch,
             gz_sim_bridge,
+            gz_server
         ]
 
 def generate_launch_description():
