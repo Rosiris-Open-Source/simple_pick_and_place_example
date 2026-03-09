@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<robot xmlns:xacro="http://wiki.ros.org/xacro" name="tower_of_hanoi">
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="moveit2">
     <xacro:include
         filename="$(find pick_and_place_descriptions)/robots/kortex/srdf/kortex_robot.srdf.xacro" />
     <xacro:kortex_robot />
