@@ -1,9 +1,9 @@
 moveit_setup_assistant_config:
   urdf:
-    package: exercise_0_moveit2
-    relative_path: description/moveit2.urdf.xacro
+    package: pick_and_place_descriptions
+    relative_path: tower_of_hanoi/urdf/tower_of_hanoi.urdf.xacro
   srdf:
-    relative_path: config/moveit2.srdf
+    relative_path: config/tower_of_hanoi.srdf.xacro
   package_settings:
     author_name: Manuel Muth
     author_email: manuel.muth@rosiris.de

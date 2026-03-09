@@ -8,9 +8,6 @@ controller_manager:
     joint_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-    robotiq_gripper_controller:
-      type: parallel_gripper_action_controller/GripperActionController
-
 joint_trajectory_controller:
   ros__parameters:
     joints:
@@ -32,9 +29,3 @@ joint_trajectory_controller:
     constraints:
       stopped_velocity_tolerance: 0.0
       goal_time: 0.0
-
-robotiq_gripper_controller:
-  ros__parameters:
-    default: true
-    joint: robotiq_85_left_knuckle_joint
-    allow_stalling: true
