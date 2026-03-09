@@ -27,10 +27,10 @@ planner_configs:
   TrajOptDefault:
     type: geometric::TrajOpt
 
-  kortex_eef:
-    default_planner_config: RRTConnectkConfigDefault
-    planner_configs:
-      - RRTConnectkConfigDefault
-      - RRTstarkConfigDefault
-      - PRMstarkConfigDefault
-      - TrajOptDefault
+kortex_eef:
+  default_planner_config: RRTConnectkConfigDefault
+  planner_configs:
+    - RRTConnectkConfigDefault
+    - RRTstarkConfigDefault
+    - PRMstarkConfigDefault
+    - TrajOptDefault
