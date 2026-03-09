@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="tower_of_hanoi">
+
+    <!-- Arguments -->
+    <!-- General -->
+    <xacro:arg name="prefix" default="" />
+    <xacro:arg name="world_link" default="world" />
+    <!-- Mock-Hardware and Simulation -->
+    <xacro:arg name="sim_gazebo" default="false" />
+    <xacro:arg name="sim_isaac" default="false" />
+    <xacro:arg name="use_mock_hardware" default="false" />
+    <xacro:arg name="mock_sensor_commands" default="false" />
+    <xacro:arg name="controllers_in_simulation" default="" />
+    <xacro:arg name="gazebo_ros_namespace" default="" />
+
+    <link name="$(arg world_link)" />
+
+    <!-- Include a desk  -->
+    <xacro:property name="desk_number" value="1" />
+    <xacro:include
+        filename="$(find rosiris_environment_description_common)/description/desk/desk_macro.xacro" />
+    <xacro:desk
+        prefix="$(arg prefix)"
+        parent="$(arg world_link)"
+        number="${desk_number}"
+        desk_height="0.8"
+        desk_base_width="1"
+        desk_base_length="1.5">
+        <origin xyz="1 1 0" rpy="0 0 0" />
+    </xacro:desk>
+
+    <!-- Include a robot mount plate on the desk  -->
+    <xacro:include
+        filename="$(find rosiris_environment_description_common)/description/robot_mounts/simple_robot_mounts.xacro" />
+    <xacro:cuboid_mount
+        prefix="desk_1_"
+        parent="$(arg prefix)desk_1_tabletop_link"
+        height="0.03"
+        width="0.12"
+        length="0.12">
+        <origin xyz="0 0.75 0" rpy="0 0 0" />
+    </xacro:cuboid_mount>
+
+    <xacro:include filename="$(find pick_and_place_descriptions)/robots/kortex/urdf/load_kortex_robot.urdf.xacro" />
+    <!-- initial position for simulations (Mock Hardware, Gazebo) -->
+    <xacro:arg name="initial_positions_file"
+        default="$(find kortex_description)/config/initial_positions.yaml" />
+    <!-- convert to property to use substitution in function -->
+    <xacro:property name="initial_positions_file" default="$(arg initial_positions_file)" />
+    <xacro:load_kortex_robot
+        parent="$(arg prefix)desk_1_cuboid_mount_middle_link"
+        prefix="$(arg prefix)"
+        arm="gen3"
+        dof="7"
+        use_fake_hardware="$(arg use_mock_hardware)"
+        fake_sensor_commands="$(arg mock_sensor_commands)"
+        sim_gazebo="$(arg sim_gazebo)"
+        sim_isaac="$(arg sim_isaac)"
+        initial_positions="${xacro.load_yaml(initial_positions_file)}">
+        <origin xyz="0 0 0" rpy="0 0 0" />  <!-- position robot relative to parent -->
+    </xacro:load_kortex_robot>
+
+    <xacro:if value="$(arg sim_gazebo)">
+        <gazebo reference="$(arg world_link)">
+        </gazebo>
+        <gazebo>
+            <plugin filename="gz_ros2_control-system"
+                name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+                <parameters>$(arg controllers_in_simulation)</parameters>
+                <ros>
+                    <namespace>$(arg ros_namespace)</namespace>
+                </ros>
+            </plugin>
+        </gazebo>
+    </xacro:if>
+
+</robot>
