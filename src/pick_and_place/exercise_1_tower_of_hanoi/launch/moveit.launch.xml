@@ -1,0 +1,63 @@
+<launch>
+    <!-- urdf and srdf paths -->
+    <arg name="robot_description_content" description="The loaded URDF/XACRO description file." />
+    <arg name="robot_srdf_content" description="SRDF semantic description file" />
+
+     <!-- simulation launch args -->
+     <arg name="use_sim_time" default="false" description="Use simulation time." />
+
+     <!-- Moveit2 configuration-->
+     <arg name="joint_limits_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/joint_limits.yaml"
+          description="Joint limits configuration" />
+     <arg name="kinematics_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/kinematics.yaml"
+          description="Kinematics configuration" />
+     <arg name="move_group_config_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/move_group_config.yaml"
+          description="Move group configuration file" />
+     <arg name="moveit_controllers_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit_controllers.yaml"
+          description="MoveIt controllers configuration" />
+     <arg name="ompl_planning_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/ompl_planning.yaml"
+          description="OMPL planning configuration" />
+     <arg name="pilz_cartesian_limits_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/pilz_cartesian_limits.yaml"
+          description="Limits for the PILZ planner" />
+     <arg name="pilz_planning_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/pilz_planning.yaml"
+          description="PILZ planning configuration" />
+
+    <!--rviz2-->
+    <arg name="rviz_config_file"
+        default="$(find-pkg-share exercise_1_tower_of_hanoi)/rviz/tower_of_hanoi.rviz"
+        description="RViz configuration file path" />
+    <arg name="start_rviz" default="true" description="Start rviz. If set to false no gui will be started." />
+
+
+     <!-- MoveIt move_group Node -->
+     <node pkg="moveit_ros_move_group" exec="move_group" output="screen">
+          <param name="robot_description" value="$(var robot_description_content)" />
+          <param name="robot_description_semantic" value="$(var robot_srdf_content)" />
+          <param from="$(var joint_limits_file_path)" />
+          <param from="$(var kinematics_file_path)" />
+          <param from="$(var move_group_config_file_path)" />
+          <param from="$(var moveit_controllers_file_path)" />
+          <param from="$(var ompl_planning_file_path)" />
+          <param from="$(var pilz_cartesian_limits_file_path)" />
+          <param from="$(var pilz_planning_file_path)" />
+          <param name="use_sim_time" value="$(var use_sim_time)" />
+     </node>
+
+     <!-- RViz2 -->
+     <node pkg="rviz2" exec="rviz2" name="rviz2" output="log" args="-d $(var rviz_config_file)" if="$(var start_rviz)">
+          <param name="robot_description" value="$(var robot_description_content)" />
+          <param name="robot_description_semantic" value="$(var robot_srdf_content)" />
+          <param from="$(var joint_limits_file_path)" />
+          <param from="$(var kinematics_file_path)" />
+          <param from="$(var pilz_cartesian_limits_file_path)" />
+          <param name="use_sim_time" value="$(var use_sim_time)" />
+     </node>
+
+</launch>
