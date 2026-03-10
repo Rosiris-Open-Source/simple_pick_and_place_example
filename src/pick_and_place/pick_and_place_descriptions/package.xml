@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>exercise_0_moveit2</name>
+  <name>pick_and_place_descriptions</name>
   <version>0.0.0</version>
   <description>Simple pick and place scenarios with industrial robots and gazebo. Aimed for beginners who want to learn basics of robotics with industrial robots.</description>
   <maintainer email="manuel.muth@rosiris.de">Manuel Muth</maintainer>
@@ -9,16 +9,11 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>gz_ros2_control</exec_depend>
   <exec_depend>joint_state_publisher</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch</exec_depend>
-  <exec_depend>ros_gz_bridge</exec_depend>
-  <exec_depend>ros_gz_interfaces</exec_depend>
-  <exec_depend>ros_gz_sim</exec_depend>
   <exec_depend>rosiris_environment_description_common</exec_depend>
   <exec_depend>rviz2</exec_depend>
-  <exec_depend>simulation_interfaces</exec_depend>
   <exec_depend>urdf</exec_depend>
   <exec_depend>xacro</exec_depend>
 

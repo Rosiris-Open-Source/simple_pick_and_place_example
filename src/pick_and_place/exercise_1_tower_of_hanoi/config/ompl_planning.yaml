@@ -28,21 +28,28 @@
         TrajOptDefault:
           type: geometric::TrajOpt
       
-      manipulator:
+      kortex_tool_group:
         default_planner_config: RRTConnectkConfigDefault
         planner_configs:
           - RRTConnectkConfigDefault
           - RRTstarkConfigDefault
           - PRMstarkConfigDefault
           - TrajOptDefault
-      manipulator_robotiq_85:
+      robotiq_2f_85_gripper:
         default_planner_config: RRTConnectkConfigDefault
         planner_configs:
           - RRTConnectkConfigDefault
           - RRTstarkConfigDefault
           - PRMstarkConfigDefault
           - TrajOptDefault
-      gripper:
+      manipulator_robotiq_2f_85:
+        default_planner_config: RRTConnectkConfigDefault
+        planner_configs:
+          - RRTConnectkConfigDefault
+          - RRTstarkConfigDefault
+          - PRMstarkConfigDefault
+          - TrajOptDefault
+      manipulator_robotiq_2f_85_tip:
         default_planner_config: RRTConnectkConfigDefault
         planner_configs:
           - RRTConnectkConfigDefault

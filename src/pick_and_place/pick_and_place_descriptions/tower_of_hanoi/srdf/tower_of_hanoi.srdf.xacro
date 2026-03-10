@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="tower_of_hanoi">
+    <!-- Inlcude the robot-->
+    <xacro:include
+        filename="$(find pick_and_place_descriptions)/robots/kortex/srdf/kortex_robot.srdf.xacro" />
+    <xacro:kortex_robot />
+
+    <!-- Disable collision for robot mount point-->
+    <disable_collisions link1="desk_1_link" link2="desk_1_cuboid_mount_link" reason="Adjacent" />
+
+    <!-- Inlcude the gripper-->
+    <xacro:include
+        filename="$(find pick_and_place_descriptions)/grippers/robotiq_2f_85/srdf/robotiq_2f_85_gripper.srdf.xacro" />
+    <xacro:robotiq_2f_85_gripper />
+
+    <group name="manipulator_robotiq_2f_85_tip">
+        <group name="kortex_tool_group"/>
+        <group name="robotiq_2f_85_gripper_tip"/>
+    </group>
+
+    <!--Disable
+    collisions between robot and gripper -->
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_base_link" reason="Adjacent" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_left_finger_link" reason="Never" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_left_finger_tip_link" reason="Never" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_left_inner_knuckle_link"
+        reason="Never" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_left_knuckle_link" reason="Never" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_right_finger_link" reason="Never" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_right_finger_tip_link"
+        reason="Never" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_right_inner_knuckle_link"
+        reason="Never" />
+    <disable_collisions link1="bracelet_link" link2="robotiq_85_right_knuckle_link" reason="Never" />
+
+    <disable_collisions link1="forearm_link" link2="robotiq_85_base_link" reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_left_finger_link" reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_left_finger_tip_link" reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_left_inner_knuckle_link"
+        reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_left_knuckle_link" reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_right_finger_link" reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_right_finger_tip_link" reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_right_inner_knuckle_link"
+        reason="Never" />
+    <disable_collisions link1="forearm_link" link2="robotiq_85_right_knuckle_link" reason="Never" />
+
+    <disable_collisions link1="half_arm_2_link" link2="robotiq_85_left_finger_tip_link"
+        reason="Never" />
+    <disable_collisions link1="half_arm_2_link" link2="robotiq_85_left_inner_knuckle_link"
+        reason="Never" />
+    <disable_collisions link1="half_arm_2_link" link2="robotiq_85_right_finger_tip_link"
+        reason="Never" />
+    <disable_collisions link1="half_arm_2_link" link2="robotiq_85_right_inner_knuckle_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_base_link" link2="spherical_wrist_1_link" reason="Never" />
+    <disable_collisions link1="robotiq_85_base_link" link2="spherical_wrist_2_link" reason="Never" />
+
+    <disable_collisions link1="robotiq_85_left_finger_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_left_finger_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_left_finger_tip_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_left_finger_tip_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_left_inner_knuckle_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_left_inner_knuckle_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_left_knuckle_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_right_finger_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_right_finger_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_right_finger_tip_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_right_finger_tip_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_right_inner_knuckle_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_right_inner_knuckle_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="spherical_wrist_1_link"
+        reason="Never" />
+    <disable_collisions link1="robotiq_85_right_knuckle_link" link2="spherical_wrist_2_link"
+        reason="Never" />
+</robot>

@@ -1,4 +1,4 @@
-# Default initial positions for gen3's ros2_control fake system
+# Default initial positions for gen3's ros2_control mock hardware
 
 initial_positions:
   joint_1: 0

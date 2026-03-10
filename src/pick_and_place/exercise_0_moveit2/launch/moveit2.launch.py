@@ -12,10 +12,7 @@ def generate_launch_description():
 
     # Define xacro mappings for the robot description file
     launch_arguments = {
-        "robot_ip": "xxx.yyy.zzz.www",
-        "use_fake_hardware": "true",
-        "gripper": "robotiq_2f_85",
-        "dof": "7",
+        "use_mock_hardware": "true",
     }
 
     # Load the robot configuration
@@ -78,7 +75,7 @@ def generate_launch_description():
         parameters=[moveit_config.robot_description],
     )
 
-    # ros2_control using mock hardware for trajectory execution
+    # ros2_control and controllers
     ros2_controllers_path = os.path.join(
         get_package_share_directory("exercise_0_moveit2"),
         "config",
@@ -94,6 +91,7 @@ def generate_launch_description():
         output="both",
     )
 
+    # spawn controllers
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -103,17 +101,10 @@ def generate_launch_description():
             "/controller_manager",
         ],
     )
-
-    arm_controller_spawner = Node(
+    joint_trajectory_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_trajectory_controller", "-c", "/controller_manager"],
-    )
-
-    hand_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["robotiq_gripper_controller", "-c", "/controller_manager"],
     )
 
     return LaunchDescription(
@@ -124,7 +115,6 @@ def generate_launch_description():
             run_move_group_node,
             ros2_control_node,
             joint_state_broadcaster_spawner,
-            arm_controller_spawner,
-            hand_controller_spawner,
+            joint_trajectory_controller_spawner,
         ]
     )

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="moveit2">
+    <xacro:include
+        filename="$(find pick_and_place_descriptions)/robots/kortex/srdf/kortex_robot.srdf.xacro" />
+    <xacro:kortex_robot />
+
+    <!-- Environment objects-->
+    <disable_collisions link1="desk_1_link" link2="desk_1_cuboid_mount_link" reason="Adjacent" />
+</robot>

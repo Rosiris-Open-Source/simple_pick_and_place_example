@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<robot name="robotiq_2f_85_model" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="load_robotiq_2f_85_gripper"
+    params="
+    parent
+    prefix
+    *origin
+    use_mock_hardware:=false
+    mock_sensor_commands:=false
+    sim_gazebo:=false
+    sim_isaac:=false
+    isaac_joint_commands:=/isaac_joint_commands
+    isaac_joint_states:=/isaac_joint_states">
+    <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" />
+
+    <!--Include
+    ros2_control if we are simulating -->
+    <xacro:property name="include_ros2_control" value="false" />
+    <xacro:if value="${use_mock_hardware or sim_gazebo or sim_isaac}">
+      <xacro:property name="include_ros2_control" value="true" />
+    </xacro:if>
+
+    <xacro:robotiq_gripper
+      name="RobotiqGripperHardwareInterface"
+      prefix="${prefix}"
+      parent="${parent}"
+      include_ros2_control="${include_ros2_control}"
+      use_fake_hardware="${use_mock_hardware}"
+      mock_sensor_commands="${mock_sensor_commands}"
+      sim_gazebo="${sim_gazebo}"
+      sim_isaac="${sim_isaac}"
+      isaac_joint_commands="${isaac_joint_commands}"
+      isaac_joint_states="${isaac_joint_states}">
+      <xacro:insert_block name="origin" />
+    </xacro:robotiq_gripper>
+
+    <!-- Add a tcp for the tip-->
+    <link name="robotiq_85_tip_tcp" />
+    <joint name="robotiq_85_tip_tcp_joint" type="fixed">
+      <parent link="robotiq_85_base_link" />
+      <child link="robotiq_85_tip_tcp" />
+      <origin xyz="0 0 0.134722" rpy="0 0 0" />
+    </joint>
+  </xacro:macro>
+</robot>

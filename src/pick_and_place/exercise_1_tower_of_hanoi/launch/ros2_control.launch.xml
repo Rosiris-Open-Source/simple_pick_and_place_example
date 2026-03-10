@@ -1,0 +1,15 @@
+<launch>
+    <!-- Launch arguments -->
+    <arg name="use_mock_hardware" default="true" description="Use mock hardware" />
+    <arg name="ros2_controllers_file_path"
+        default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/ros2_controllers.yaml"
+        description="ROS2 controllers configuration" />
+
+
+    <!-- ROS2 Control Node -->
+    <node pkg="controller_manager" exec="ros2_control_node" output="both">
+        <param from="$(var ros2_controllers_file_path)" />
+        <remap from="/controller_manager/robot_description" to="/robot_description" />
+    </node>
+
+</launch>

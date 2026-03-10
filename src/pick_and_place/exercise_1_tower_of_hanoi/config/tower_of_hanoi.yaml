@@ -5,7 +5,7 @@
 
     grippers:
       gripper_robotiq_85:
-        eef_link: "robotiq_85_tip_link"
+        eef_link: "robotiq_85_tip_tcp"
         allowed_touch_links:
         - "robotiq_85_left_finger_tip_link"
         - "robotiq_85_left_inner_knuckle_link"

@@ -53,10 +53,8 @@ install(TARGETS tower_of_hanoi
 )
 
 install(
-  DIRECTORY description launch moveit_config_xml rviz
+  DIRECTORY config launch rviz scenarios
   DESTINATION share/${PROJECT_NAME}
 )
-
-install(FILES .setup_assistant DESTINATION share/${PROJECT_NAME})
 
 ament_package()

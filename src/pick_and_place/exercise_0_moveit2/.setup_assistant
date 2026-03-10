@@ -3,7 +3,7 @@ moveit_setup_assistant_config:
     package: exercise_0_moveit2
     relative_path: description/moveit2.urdf.xacro
   srdf:
-    relative_path: config/moveit2.srdf
+    relative_path: config/moveit2.srdf.xacro
   package_settings:
     author_name: Manuel Muth
     author_email: manuel.muth@rosiris.de

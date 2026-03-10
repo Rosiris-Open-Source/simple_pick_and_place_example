@@ -1,0 +1,27 @@
+<launch>
+    <!-- Arguments -->
+    <arg name="gazebo_gui" default="true" description="Launch Gazebo GUI" />
+    <arg name="world_file" default="empty.sdf" description="World SDF file" />
+    <arg name="robot_description_content" description="The loaded URDF/XACRO description file." />
+
+    <!-- Spawn entity in Gazebo -->
+    <node
+        pkg="ros_gz_sim" exec="create" name="gz_spawn_entity" output="screen"
+        args="-string $(var robot_description_content) -name moveit2 -allow_renaming true" />
+
+    <!-- Include gz_sim.launch.py GUI (conditional) -->
+    <include file="$(find-pkg-share ros_gz_sim)/launch/gz_sim.launch.py" if="$(var gazebo_gui)">
+        <arg name="gz_args" value=" -g -v 4 $(var world_file)" />
+    </include>
+
+    <!-- Include gz_server.launch.py -->
+    <include file="$(find-pkg-share ros_gz_sim)/launch/gz_server.launch.py">
+        <arg name="world_sdf_file" value="$(var world_file)" />
+        <arg name="create_own_container" value="True" />
+        <arg name="use_composition" value="True" />
+    </include>
+
+    <!-- Bridge /clock topic -->
+    <node pkg="ros_gz_bridge" exec="parameter_bridge" name="gz_sim_bridge" output="screen"
+        args="/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock" />
+</launch>
