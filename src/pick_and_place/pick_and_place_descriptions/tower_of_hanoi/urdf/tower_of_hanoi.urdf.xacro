@@ -41,7 +41,30 @@
         <origin xyz="0 0.75 0" rpy="0 0 0" />
     </xacro:cuboid_mount>
 
-    <xacro:include filename="$(find pick_and_place_descriptions)/robots/kortex/urdf/load_kortex_robot.urdf.xacro" />
+    <!-- Place locations for the cubes-->
+    <link name="$(arg prefix)desk_${desk_number}_place_location_left" />
+    <joint name="$(arg prefix)desk_${desk_number}_place_location_left_joint" type="fixed">
+        <parent link="$(arg prefix)desk_${desk_number}_tabletop_link" />
+        <child link="$(arg prefix)desk_${desk_number}_place_location_left" />
+        <origin xyz="0.5 1.15 0.0" rpy="0 0 0" />
+    </joint>
+
+    <link name="$(arg prefix)desk_${desk_number}_place_location_middle" />
+    <joint name="$(arg prefix)desk_${desk_number}_place_location_middle_joint" type="fixed">
+        <parent link="$(arg prefix)desk_${desk_number}_tabletop_link" />
+        <child link="$(arg prefix)desk_${desk_number}_place_location_middle" />
+        <origin xyz="0.5 0.8 0.0" rpy="0 0 0" />
+    </joint>
+
+    <link name="$(arg prefix)desk_${desk_number}_place_location_right" />
+    <joint name="$(arg prefix)desk_${desk_number}_place_location_right_joint" type="fixed">
+        <parent link="$(arg prefix)desk_${desk_number}_tabletop_link" />
+        <child link="$(arg prefix)desk_${desk_number}_place_location_right" />
+        <origin xyz="0.5 0.45 0.0" rpy="0 0 0" />
+    </joint>
+
+    <xacro:include
+        filename="$(find pick_and_place_descriptions)/robots/kortex/urdf/load_kortex_robot.urdf.xacro" />
     <!-- initial position for simulations (Mock Hardware, Gazebo) -->
     <xacro:arg name="initial_positions_file"
         default="$(find kortex_description)/config/initial_positions.yaml" />
@@ -59,6 +82,18 @@
         initial_positions="${xacro.load_yaml(initial_positions_file)}">
         <origin xyz="0 0 0" rpy="0 0 0" />  <!-- position robot relative to parent -->
     </xacro:load_kortex_robot>
+
+    <xacro:include
+        filename="$(find pick_and_place_descriptions)/grippers/robotiq_2f_85/urdf/load_robotiq_2f_85_gripper.xacro" />
+    <xacro:load_robotiq_2f_85_gripper
+        parent="$(arg prefix)kortex_tool_link"
+        prefix="$(arg prefix)"
+        use_mock_hardware="$(arg use_mock_hardware)"
+        mock_sensor_commands="$(arg mock_sensor_commands)"
+        sim_gazebo="$(arg sim_gazebo)"
+        sim_isaac="$(arg sim_isaac)">
+        <origin xyz="0 0 0" rpy="0 0 0" /> 
+    </xacro:load_robotiq_2f_85_gripper>
 
     <xacro:if value="$(arg sim_gazebo)">
         <gazebo reference="$(arg world_link)">

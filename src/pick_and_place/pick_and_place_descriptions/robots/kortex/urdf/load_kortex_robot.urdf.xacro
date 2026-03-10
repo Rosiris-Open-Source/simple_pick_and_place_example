@@ -22,7 +22,8 @@
         <xacro:include
             filename="$(find kortex_description)/arms/${arm}/${dof}dof/urdf/${arm}_macro.xacro" />
         <!-- Load the arm -->
-        <!-- Set some defaults for robot_ip, vision, gripper, gripper_joint_name which are not important-->
+        <!-- Set some defaults for robot_ip, vision, gripper, gripper_joint_name which are not
+        important-->
         <xacro:load_arm
             parent="${parent}"
             prefix="${prefix}"
@@ -44,11 +45,11 @@
         <!-- Define tool frame for planning -->
         <!-- This is "universal" planning frame to which can be planned with an offset regardless of
         what tool might be attached -->
-        <link name="${prefix}kortex_eef" />
+        <link name="${prefix}kortex_tool_link" />
         <joint name="${prefix}tool_frame_joint" type="fixed">
             <origin xyz="0 0 0" rpy="0 0 0" />
             <parent link="${prefix}${last_arm_link}" />
-            <child link="${prefix}kortex_eef" />
+            <child link="${prefix}kortex_tool_link" />
             <axis xyz="0 0 0" />
         </joint>
 

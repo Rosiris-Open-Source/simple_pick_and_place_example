@@ -8,6 +8,11 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 install(
+  DIRECTORY grippers/ 
+  DESTINATION share/${PROJECT_NAME}/grippers
+)
+
+install(
   DIRECTORY robots/ 
   DESTINATION share/${PROJECT_NAME}/robots
 )
