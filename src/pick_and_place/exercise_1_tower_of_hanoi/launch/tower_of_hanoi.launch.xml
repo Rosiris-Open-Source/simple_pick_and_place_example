@@ -1,6 +1,5 @@
 <launch>
      <!-- Arguments-->
-     <arg name="use_mock_hardware" default="true" description="Use mock hardware" />
      <arg name="scenario_file" default="tower_of_hanoi_scenario.yaml"
           description="Which scenario to load." />
      <!-- urdf and srdf paths -->
@@ -10,15 +9,22 @@
      <arg name="semantic_description_file_path"
           default="$(find-pkg-share pick_and_place_descriptions)/tower_of_hanoi/srdf/tower_of_hanoi.srdf.xacro"
           description="SRDF semantic description file" />
+     <!-- controller file used-->
+     <arg name="ros2_controllers_file_path"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/ros2_controllers.yaml"
+          description="ROS2 controllers configuration." />
 
      <arg name="start_gazebo" default="false" description="Start the gazebo simulation" />
      <!-- Compute use_sim_time: true if start_gazebo, else false -->
-     <let name="use_sim_time" value="$(var start_gazebo)"/>
+     <let name="use_sim_time" value="$(var start_gazebo)" />
+     <let name="use_mock_hardware" value="$(eval '\'$(var start_gazebo)\' == \'false\'')" />
 
      <!-- Load robot description and publish -->
      <let name="robot_description_content"
           value="$(command '$(find-exec xacro) $(var description_file_path) \
-                use_mock_hardware:=$(var use_mock_hardware)')" />
+                use_mock_hardware:=$(var use_mock_hardware)
+                start_gazebo:=$(var start_gazebo)
+                controllers_in_simulation:=$(var ros2_controllers_file_path)')" />
      <!-- Robot State Publisher -->
      <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher"
           output="both">
@@ -37,9 +43,17 @@
           <arg name="robot_srdf_content" value="$(var robot_srdf_content)" />
      </include>
 
-     <!-- start ros2_control for joint state broadcaster-->
+     <!-- start gazebo -->
+     <include file="$(find-pkg-share exercise_1_tower_of_hanoi)/launch/gz.launch.xml"
+          if="$(var start_gazebo)">
+          <arg name="robot_description_content" value="$(var robot_description_content)" />
+     </include>
+
+     <!-- start ros2_control, only if not simulating with gazebo-->
      <include file="$(find-pkg-share exercise_1_tower_of_hanoi)/launch/ros2_control.launch.xml"
-          unless="$(var start_gazebo)" />
+          unless="$(var start_gazebo)">
+          <arg name="ros2_controllers_file_path" value="$(var ros2_controllers_file_path)" />
+     </include>
      <!-- Start controllers -->
      <include file="$(find-pkg-share exercise_1_tower_of_hanoi)/launch/start_controllers.launch.xml" />
 

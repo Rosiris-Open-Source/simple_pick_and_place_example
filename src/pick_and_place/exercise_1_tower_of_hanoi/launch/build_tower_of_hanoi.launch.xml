@@ -1,0 +1,12 @@
+<launch>
+    <!-- Arguments -->
+    <arg name="params_file"
+        default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/tower_of_hanoi.yaml"
+        description="Path to the parameters file" />
+
+    <!-- Run the tower_of_hanoi node -->
+    <node pkg="exercise_1_tower_of_hanoi" exec="tower_of_hanoi" name="hanoi_grasp_node"
+        output="screen">
+        <param from="$(var params_file)" />
+    </node>
+</launch>
