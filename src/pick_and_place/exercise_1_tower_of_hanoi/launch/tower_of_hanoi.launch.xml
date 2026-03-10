@@ -11,7 +11,7 @@
           description="SRDF semantic description file" />
      <!-- controller file used-->
      <arg name="ros2_controllers_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/ros2_controllers.yaml"
+          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/ros2_control/ros2_controllers.yaml"
           description="ROS2 controllers configuration." />
 
      <arg name="start_gazebo" default="false" description="Start the gazebo simulation" />

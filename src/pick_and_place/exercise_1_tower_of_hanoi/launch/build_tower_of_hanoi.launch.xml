@@ -1,7 +1,7 @@
 <launch>
     <!-- Arguments -->
     <arg name="params_file"
-        default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/tower_of_hanoi.yaml"
+        default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/scenario/tower_of_hanoi.yaml"
         description="Path to the parameters file" />
 
     <!-- Run the tower_of_hanoi node -->

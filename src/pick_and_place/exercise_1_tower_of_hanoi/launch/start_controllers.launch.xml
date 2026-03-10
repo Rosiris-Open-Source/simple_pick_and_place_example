@@ -1,6 +1,6 @@
 <launch>
-    <arg name="use_sim_time" default="false" description="Use simulation time" />
-    <!-- Joint State Broadcaster -->
+     <arg name="use_sim_time" default="false" description="Use simulation time" />
+     <!-- Joint State Broadcaster -->
      <node pkg="controller_manager" exec="spawner"
           args="joint_state_broadcaster --controller-manager /controller_manager">
           <param name="use_sim_time" value="$(var use_sim_time)" />
@@ -17,5 +17,4 @@
           args="robotiq_gripper_controller -c /controller_manager">
           <param name="use_sim_time" value="$(var use_sim_time)" />
      </node>
-
 </launch>
