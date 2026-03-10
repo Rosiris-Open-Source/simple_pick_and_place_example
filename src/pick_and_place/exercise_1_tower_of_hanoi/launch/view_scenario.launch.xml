@@ -1,0 +1,29 @@
+<launch>
+    <!-- Launch arguments -->
+    <arg name="use_fake_hardware" default="true" description="Use mock hardware" />
+    <arg name="dof" default="7" description="Degrees of freedom"/>
+    <arg name="rviz_config" default="pick_and_place_default.rviz"
+        description="RViz configuration file" />
+    <arg name="rviz_file_path"
+        default="$(find-pkg-share pick_and_place)/rviz/$(var rviz_config)"
+        description="RViz configuration file path" />
+
+    <!-- File paths -->
+    <arg name="description_file_path"
+        default="$(find-pkg-share pick_and_place)/description/tower_of_hanoi.urdf.xacro"
+        description="URDF/XACRO description file" />
+
+
+    <!-- Load robot description -->
+    <let name="robot_description_content"
+        value="$(command '$(find-exec xacro) $(var description_file_path) \
+                use_fake_hardware:=$(var use_fake_hardware) \
+                gripper:=$(var gripper) \
+                dof:=$(var dof)')" />
+
+    <!-- RViz2 -->
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="log" args="-d $(var rviz_file_path)">
+        <param name="robot_description" value="$(var robot_description_content)" />
+    </node>
+
+</launch>

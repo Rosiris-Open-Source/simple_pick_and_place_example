@@ -307,7 +307,7 @@ bool TowerOfHanoi::updateAllowedCollision(
 bool TowerOfHanoi::homeRobot() {
   RCLCPP_INFO(get_logger(), "%s():", __func__);
   auto move_group = moveit::planning_interface::MoveGroupInterface(
-      shared_from_this(), "manipulator");
+      shared_from_this(), "kortex_tool_group");
   configurePlannerOmpl(move_group);
 
   // Use the "Home" named target from SRDF
@@ -761,7 +761,7 @@ int main(int argc, char **argv) {
   exec.add_node(tower_of_hanoi_node);
   auto spin_thread = std::make_unique<std::thread>([&exec]() { exec.spin(); });
 
-  tower_of_hanoi_node->configureMoveit("manipulator_robotiq_85");
+  tower_of_hanoi_node->configureMoveit("manipulator_robotiq_2f_85_tip");
   tower_of_hanoi_node->buildTowerOfHanoi();
   // we are finished so we shutdown and wait for the spin_thread to shutdown
   rclcpp::shutdown();

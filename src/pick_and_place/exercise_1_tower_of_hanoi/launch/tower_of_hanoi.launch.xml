@@ -1,42 +1,41 @@
 <launch>
   <!-- Launch arguments -->
-  <arg name="use_fake_hardware" default="true" description="Use mock hardware"/>
-  <arg name="gripper" default="robotiq_2f_85" description="Gripper type"/>
-  <arg name="dof" default="7" description="Degrees of freedom"/>
+  <arg name="use_mock_hardware" default="true" description="Use mock hardware"/>
   <arg name="use_sim_time" default="false" description="Use simulation time"/>
   <arg name="rviz_config" default="tower_of_hanoi.rviz" description="RViz configuration file"/>
 
-  <!-- File paths -->
+  <!-- urdf and srdf paths -->
   <arg name="description_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/description/tower_of_hanoi.urdf.xacro"
+       default="$(find-pkg-share pick_and_place_descriptions)/tower_of_hanoi/urdf/tower_of_hanoi.urdf.xacro"
        description="URDF/XACRO description file"/>
   <arg name="semantic_description_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/tower_of_hanoi.srdf"
+       default="$(find-pkg-share pick_and_place_descriptions)/tower_of_hanoi/srdf/tower_of_hanoi.srdf.xacro"
        description="SRDF semantic description file"/>
-  <arg name="ros2_controllers_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/ros2_controllers.yaml"
-       description="ROS2 controllers configuration"/>
 
+  <!-- Moveit2 configuration-->
+  <arg name="ros2_controllers_file_path"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/ros2_controllers.yaml"
+       description="ROS2 controllers configuration"/>
   <arg name="joint_limits_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/joint_limits.yaml"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/joint_limits.yaml"
        description="Joint limits configuration"/>
   <arg name="kinematics_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/kinematics.yaml"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/kinematics.yaml"
        description="Kinematics configuration"/>
   <arg name="move_group_config_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/move_group_config.yaml"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/move_group_config.yaml"
        description="Move group configuration file"/>
   <arg name="moveit_controllers_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/moveit_controllers.yaml"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit_controllers.yaml"
        description="MoveIt controllers configuration"/>
   <arg name="ompl_planning_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/ompl_planning.yaml"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/ompl_planning.yaml"
        description="OMPL planning configuration"/>
    <arg name="pilz_cartesian_limits_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/pilz_cartesian_limits.yaml"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/pilz_cartesian_limits.yaml"
        description="Limits for the PILZ planner"/>
   <arg name="pilz_planning_file_path"
-       default="$(find-pkg-share exercise_1_tower_of_hanoi)/moveit_config_xml/pilz_planning.yaml"
+       default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/pilz_planning.yaml"
        description="PILZ planning configuration"/>
 
   <arg name="rviz_file_path"
@@ -47,9 +46,7 @@
   <!-- Load robot description -->
   <let name="robot_description_content"
        value="$(command '$(find-exec xacro) $(var description_file_path) \
-                use_fake_hardware:=$(var use_fake_hardware) \
-                gripper:=$(var gripper) \
-                dof:=$(var dof)')"/>
+                use_mock_hardware:=$(var use_mock_hardware)')"/>
 
   <!-- Robot State Publisher -->
   <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher" output="both">

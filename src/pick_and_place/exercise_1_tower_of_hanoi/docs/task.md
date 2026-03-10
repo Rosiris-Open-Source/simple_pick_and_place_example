@@ -19,3 +19,9 @@ Architectural:
 3. Hard-coded configuration:
     * Planner IDs, frame names, link names, and topics hard-coded.
     * Not configurable via parameters.
+
+    MoveitProblems:
+
+    1. No kinematics Plugin -> cannot move in rviz2
+    2. Multiple eef links -> robot green and does not "stick to base" when moved in rviz2
+    3. Missing controllers -> cannot move
