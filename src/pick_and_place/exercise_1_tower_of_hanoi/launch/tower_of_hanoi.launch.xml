@@ -51,6 +51,10 @@
      <include file="$(find-pkg-share exercise_1_tower_of_hanoi)/launch/gz.launch.xml"
           if="$(var start_gazebo)">
           <arg name="robot_description_content" value="$(var robot_description_content)" />
+          <arg name="world_file"
+               value="$(find-pkg-share exercise_1_tower_of_hanoi)/config/gazebo/tower_of_hanoi.sdf" />
+          <arg name="gz_bridge_config"
+               value="$(find-pkg-share exercise_1_tower_of_hanoi)/config/gazebo/gz_bridge.yaml" />
      </include>
 
      <!-- start ros2_control, only if not simulating with gazebo-->
