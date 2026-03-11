@@ -41,6 +41,10 @@
           <arg name="use_sim_time" value="$(var use_sim_time)" />
           <arg name="robot_description_content" value="$(var robot_description_content)" />
           <arg name="robot_srdf_content" value="$(var robot_srdf_content)" />
+          <arg name="moveit_config_pkg" value="exercise_1_tower_of_hanoi" />
+          <arg name="moveit_config_path_prefix" value="config/moveit/" />
+          <arg name="rviz_config_file"
+               value="$(find-pkg-share exercise_1_tower_of_hanoi)/rviz/tower_of_hanoi.rviz" />
      </include>
 
      <!-- start gazebo -->

@@ -7,31 +7,34 @@
      <arg name="use_sim_time" default="false" description="Use simulation time." />
 
      <!-- Moveit2 configuration-->
+     <arg name="moveit_config_pkg"
+          description="ROS 2 package used as default for finding the config." />
+     <arg name="moveit_config_path_prefix"
+          description="Relative path to the moveit_config_pkg to look for the config files for moveit." />
      <arg name="joint_limits_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit/joint_limits.yaml"
+          default="$(find-pkg-share $(var moveit_config_pkg))/$(var moveit_config_path_prefix)joint_limits.yaml"
           description="Joint limits configuration" />
      <arg name="kinematics_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit/kinematics.yaml"
+          default="$(find-pkg-share $(var moveit_config_pkg))/$(var moveit_config_path_prefix)kinematics.yaml"
           description="Kinematics configuration" />
      <arg name="move_group_config_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit/move_group_config.yaml"
+          default="$(find-pkg-share $(var moveit_config_pkg))/$(var moveit_config_path_prefix)move_group_config.yaml"
           description="Move group configuration file" />
      <arg name="moveit_controllers_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit/moveit_controllers.yaml"
+          default="$(find-pkg-share $(var moveit_config_pkg))/$(var moveit_config_path_prefix)moveit_controllers.yaml"
           description="MoveIt controllers configuration" />
      <arg name="ompl_planning_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit/ompl_planning.yaml"
+          default="$(find-pkg-share $(var moveit_config_pkg))/$(var moveit_config_path_prefix)ompl_planning.yaml"
           description="OMPL planning configuration" />
      <arg name="pilz_cartesian_limits_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit/pilz_cartesian_limits.yaml"
+          default="$(find-pkg-share $(var moveit_config_pkg))/$(var moveit_config_path_prefix)pilz_cartesian_limits.yaml"
           description="Limits for the PILZ planner" />
      <arg name="pilz_planning_file_path"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/config/moveit/pilz_planning.yaml"
+          default="$(find-pkg-share $(var moveit_config_pkg))/$(var moveit_config_path_prefix)pilz_planning.yaml"
           description="PILZ planning configuration" />
 
      <!--rviz2-->
      <arg name="rviz_config_file"
-          default="$(find-pkg-share exercise_1_tower_of_hanoi)/rviz/tower_of_hanoi.rviz"
           description="RViz configuration file path" />
      <arg name="start_rviz" default="true"
           description="Start rviz. If set to false no gui will be started." />
